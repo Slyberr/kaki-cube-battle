@@ -1,6 +1,6 @@
 <template>
 
-  <UPageHero class="h-full" title="Bienvenue sur Kaki Cube !"
+  <UPageHero  title="Bienvenue sur Kaki Cube !"
     description="Projet open-source qui permet de créer une salle instantanément et sans compte !  Créez des salles privées ou publiques et affrontez vos amis sur toutes les épreuves WCA."
     headline="v0.1">
 
@@ -86,6 +86,15 @@
 </template>
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * See the LICENSE file at the root of this repository for full terms.
+ */
+
 import { separator } from '#build/ui';
 import * as v from 'valibot';
 import { mapEvent, type EventID } from '~/types/solve';

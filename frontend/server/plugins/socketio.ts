@@ -1,3 +1,12 @@
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * See the LICENSE file at the root of this repository for full terms.
+ */
+
 import { CorsOptions } from 'cors';
 import { Server as Engine } from 'engine.io';
 import { Server } from 'socket.io';
@@ -26,6 +35,7 @@ export default defineNitroPlugin((nitroApp) => {
 
   io.on('connection', (socket) => {
     socket.data.roomname = '';
+    
     console.log('new user :', socket.id);
 
     //app.vue on he onMounted emit('i-want-all-rooms')
@@ -77,6 +87,7 @@ export default defineNitroPlugin((nitroApp) => {
             actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
           socket.emit('go-to-room', room.roomname);
+          console.log(room.pseudo + ' created new room : ' + room.roomname)
 
           //when a new player come (event for players already in room)
           io.to(room.roomname).emit(
@@ -123,6 +134,7 @@ export default defineNitroPlugin((nitroApp) => {
             socket.data.roomname = room.roomname;
             rooms.set(room.roomname, room);
             //redirect on room/[id].vue
+            console.log(info.pseudo + 'join this room: ' + info.roomname)
             socket.emit('go-to-room', room.roomname);
 
             //Emit to EVERYONE rooms updated

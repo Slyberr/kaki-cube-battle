@@ -19,21 +19,23 @@
          </div>
          <div class="w-full border m-0"></div>
          <p class="text-sm p-4">
-            ⚠️ CONCERNANT L'UTILISATION DU CHAT :
+            ⚠️ En écrivant votre message, vous acceptez ceci :
             <br>
             <br>
-            - Ce chat n'est pas chiffré de bout en bout : Veillez à ne transmettre AUCUNE information sensible (même votre prénom par exemple).
+            - Ce channel n'est pas chiffré de bout en bout : Veillez à ne transmettre AUCUNE information sensible (même votre prénom par exemple).
 
             <br>
             - Vous n'avez pas accès à l'ancien historique de message.
             <br>
             - Les messages ne sont conservés qu'en local : le serveur ne fait que transiter les données.
             <br>
-            - Lorsque la dernière personne est partie ou que la room est supprimée, les messages sont
+            - Lorsque la dernière personne est partie ou que la salle est supprimée, les messages sont
             naturellement supprimés.
             <br>
             - Restez courtois, respecteux et veuillez ne pas céder à l'expression d'une quelqueconque haine.
             <br>
+            <br>
+            - Vous êtes le seul responsable et unique responsable du contenu transmis dans ce channel.
          </p>
 
       </div>
@@ -48,6 +50,15 @@
 
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * See the LICENSE file at the root of this repository for full terms.
+ */
+
 import { Socket } from 'socket.io-client';
 import type { Message } from '~/types/chat';
 import type { Player } from '~/types/player';

@@ -1,3 +1,12 @@
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * See the LICENSE file at the root of this repository for full terms.
+ */
+
 import { Server } from 'socket.io';
 import { Player, Room } from '../types/types.js';
 import { everyoneScored } from './everyoneScored.js';
@@ -25,13 +34,14 @@ export const leaveRoom = (
   }
   mySocket.data.roomname = '';  
   
-
+  let playerName = '';
   if (roomToManage) {
     let wasOwner = false;
 
     const roomNoLeaver = roomToManage.players.filter((player: Player) => {
       if (player.id === mySocket.id) {
         wasOwner = player.owner;
+        playerName = player.pseudo;
         return false;
       } else {
         return true;
@@ -52,7 +62,7 @@ export const leaveRoom = (
       console.log(
         'room',
         roomname,
-        'Deleted. Actual rooms state :',
+        'deleted. rooms status :',
         Array.from(rooms.keys()),
       );
     } else {
@@ -63,8 +73,8 @@ export const leaveRoom = (
       }
 
       rooms.set(roomname, roomToManage);
-      console.log('room', roomname, 'still standing. Players left : ');
-      roomToManage.players.forEach((player) => console.log(player.pseudo));
+      console.log(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
+    
       //Stop display the leaver player and update the room.
       io.to(roomname).emit('remove-player', roomToManage.players, mySocket.id);
     }
