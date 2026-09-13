@@ -139,6 +139,11 @@
          En ce qui concerne les données personnelles, la vie privée et les collectes de données, consultez les CGU et la
          politique de confidentialité.
       </p>
+      <br />
+      <p class="text-lg">4/ Icones du site</p>
+      <p class="text-xs">
+         Toutes les icones du site à l'exception du logo viennent de la librarie open source lucide (https://lucide.dev/guide/).
+      </p>
 
    </div>
 
