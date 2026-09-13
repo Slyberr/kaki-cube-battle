@@ -1,5 +1,5 @@
 <template>
-   <div class="flex flex-col border-secondary m-4 sm:m-2">
+   <div class="flex flex-col  h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 border-secondary mx-4 sm:mx-2">
       <p class="text-primary p-2">Tchat de <i>{{ props.roomname }}</i></p>
 
 

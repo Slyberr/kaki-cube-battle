@@ -1,5 +1,5 @@
 <template>
-    <UTable sticky class="max-h-110 mx-2 border border-gray-400 rounded-sm" :columns="colonnes" :data="props.times"/>
+    <UTable sticky class="h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 mx-2 border border-gray-400 rounded-sm" :columns="colonnes" :data="props.times"/>
 </template>
 
 

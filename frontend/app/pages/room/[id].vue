@@ -1,5 +1,5 @@
 <template>
- 
+
   <UModal>
     <UButton color="primary" variant="ghost" label="Retour" icon="lucide:arrow-left" />
     <template #content="{ close }">
@@ -16,29 +16,33 @@
   <div class="flex flex-col">
     <div>
       <div v-if="me" class="flex flex-col items-center gap-4 w-full">
-        <div v-if="showPage" id="head-info" class="flex flex-col text-center w-full">
+        <div v-if="showPage" id="head-info" class="relative flex flex-col text-center w-full">
           <h1 class="text-3xl">{{ roomname }}</h1>
 
           <p v-if="me.owner">(Vous êtes le<i class="text-primary"> modérateur</i>)</p>
           <p class="text-2xl">{{ puzzle }}</p>
-          <p class="text-center m-2 text-xs sm:text-sm md:text-base 2xl:text-lg h-20 sm:h-28 md:h-32  ">
-            {{ scramble }}</p>
-
-          <Timer class="h-20 timer flex justify-center" :local-player-state="localPlayerState"
-            :ready-holding-time="readyHoldingTime" :active-inspection="inspection" :input-mode="inputMode"
-            :audios="audiosForInspection"
-            @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
-            @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
+          <div class="absolute top-22 flex justify-center w-full">
+            <p
+              class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
+              {{ scramble }}</p>
+          </div>
+          <div class="flex pt-32 justify-center w-full">
+            <Timer 
+              :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
+              :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
+              @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
+              @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
+          </div>
         </div>
 
-        <div id="twisty-container" class="flex w-full justify-end" />
+        <div id="twisty-container" class="flex w-full justify-end " />
       </div>
-      <UDropdownMenu v-if="showPage":items="dropDownItems" :disabled="!dropDownMenuEnabled">
+      <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
         <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" />
       </UDropdownMenu>
 
     </div>
-    <div v-if="me && showPage" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr] lg:grid-cols-[2fr_1fr] w-full ">
+    <div v-if="me && showPage" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
       <TabBattle class="grow-8" v-if="roomPlayers.length > 0" :players="roomPlayers" :times="allSolves"
         :solve-id="actualSolveId" :me="me" />
 
@@ -47,7 +51,7 @@
 
   </div>
 
-  
+
 </template>
 
 
@@ -105,7 +109,7 @@ definePageMeta({
     function (_, from) {
       if (from.path !== '/home') {
         return navigateTo('/home', { redirectCode: 301 })
-      } 
+      }
     }
   ]
 });
@@ -119,9 +123,9 @@ useHead({
 //ALL LISTENERS SECTIONS
 
 onMounted(() => {
- 
+
   socket.on('send-all-room-data', (info: { players: Player[], scramble: string, event: string, actualSolveId: number, allSolves: Solve[], error: boolean }) => {
-   
+
     if (!info.error) {
       showPage.value = true;
       roomPlayers.value = info.players;
@@ -135,7 +139,7 @@ onMounted(() => {
         drawer.value.visualization = '2D';
         drawer.value.controlPanel = 'none';
         drawer.value.background = 'none';
-        drawer.value.classList.add('scale-60', 'sm:scale-70', 'lg:scale-80', 'xl:scale-90', '2xl:scale-100');
+        drawer.value.classList.add('w-60', 'sm:w-70', 'lg:w-80', 'xl:w-90', '2xl:w-100', 'max-h-30', 'md:max-h-40', 'xl:max-h-60');
         nextTick();
         const wrapper = document.getElementById('twisty-container')!;
         wrapper.appendChild(drawer.value);
@@ -231,8 +235,8 @@ onMounted(() => {
     actualSolveId.value = 1;
   });
 
-   //emit on onMounted i-want-room-data to get data.
-   socket.emit('i-want-room-data');
+  //emit on onMounted i-want-room-data to get data.
+  socket.emit('i-want-room-data');
 });
 
 const sendTime = (time: number, inspectionPenality: string, penalitySelected: string) => {
