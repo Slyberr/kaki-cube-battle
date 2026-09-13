@@ -357,7 +357,7 @@ const beginInspection = () => {
 
 const saveTime = () => {
   if (props.inputMode === 'KEYBOARD') {
-    buttonLabel.value = "Tout le monde n'a pas terminé...";
+    buttonLabel.value = "Des joueurs terminent...";
     timer.state = 'WAITING_OTHER';
 
     inspectionValue.value = 15;

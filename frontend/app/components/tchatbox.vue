@@ -1,24 +1,25 @@
 <template>
-   <div class="flex flex-col  h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 border-secondary mx-4 sm:mx-2">
+   <div class="flex flex-col  h-60 md:h-60 md:w-[80%] lg:h-70 lg:w-full xl:h-90 2xl:h-110 border-secondary mx-2 sm:mx-4">
       <p class="text-primary p-2">Tchat de <i>{{ props.roomname }}</i></p>
 
 
 
 
-      <div class="tchat-container text-gray-400 bg-gray-950 min-h-0 h-80 flex flex-col overflow-y-scroll  border rounded-t-2xl">
+      <div class="tchat-container text-gray-400 bg-gray-950 min-h-0 h-80 flex flex-col overflow-y-scroll  border rounded-2xl">
 
          <div id="area-of-chat">
             <div class="flex flex-col mb-2 text-sm pt-2 pl-2" v-for="msg in conv">
                <div class="flex gap-1">
                   <div class="text-gray-700">{{ '[' + msg.date + ']' }}</div>
-                  <div class="text-primary"><i>{{ msg.pseudo }}</i></div>
+                  <div :class="msg.pseudo === props.me.pseudo ?  'text-primary-500' : ''"><i>{{ msg.pseudo === props.me.pseudo ? 'Vous ' : msg.pseudo }}</i></div>
+                  <div><i>{{ msg.pseudo === props.me.pseudo ? 'avez' : 'a' }}</i></div>
                   <div><i>dit:</i></div>
                </div>
                <div class="flex break-all whitespace-pre-wrap">{{ msg.data }}</div>
             </div>
          </div>
          <div class="w-full border m-0"></div>
-         <p class="text-sm p-4">
+         <p class="text-xs p-4">
             ⚠️ En écrivant votre message, vous acceptez ceci :
             <br>
             <br>
@@ -34,7 +35,7 @@
             <br>
             - Restez courtois, respecteux et veuillez ne pas céder à l'expression d'une quelqueconque haine.
             <br>
-            <br>
+
             - Vous êtes le seul responsable et unique responsable du contenu transmis dans ce channel.
          </p>
 

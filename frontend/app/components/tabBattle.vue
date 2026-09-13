@@ -1,5 +1,6 @@
 <template>
-    <UTable sticky class="h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 mx-2 border border-gray-400 rounded-sm" :columns="colonnes" :data="props.times"/>
+    <UTable sticky class="h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 mx-2 border border-gray-400 rounded-sm"
+        :columns="colonnes" :data="props.times" />
 </template>
 
 
@@ -37,21 +38,24 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
     for (let player of props.players) {
         mainColumns.push({
             accessorKey: player.id,
-            header: ({ column }) => {
-                const buttonLabel = `${player.pseudo} \n ${stateForHuman(player.state)} \n mean: ${mean(player.id)}`;
+            header: () => {
+                const pseudo = player.pseudo;
+                const state = stateForHuman(player.state);
+                const themean = mean(player.id);
+                const ao5 = currentAvg(5, player.id);
+                const ao12 = currentAvg(12, player.id)
+
+
                 return h('div', { class: 'flex justify-center' },
-                    [
-                        h('div', { class: 'text-center whitespace-pre-line' }, buttonLabel),
-                        h(resolveComponent('UTooltip'), { text: `Avg 5 actuel : ${currentAvg(5, player.id)} \n Avg 12 actuel : ${currentAvg(12, player.id)} `, 'delay-duration': 200 },
-                            {
-                                default: () => h(resolveComponent('UButton'), { variant: 'ghost', icon: 'lucide:info' }),
-                                content: () => h('div', { class: 'whitespace-pre-line' }, [
-                                    `Ao5 actuelle : ${currentAvg(5, player.id)}\n`,
-                                    `Ao12 actuelle : ${currentAvg(12, player.id)}`,
-                                ])
-                            }
-                        )
-                    ]
+                    [h('div', { class: 'text-center flex flex-col' }, [
+                        
+                        h('span', { class: player.id === props.me.id ? 'text-primary' : 'text-gray-100' }, player.id === props.me.id ? 'Vous' : pseudo),
+                        h('span', { class: 'text-gray-100  italic' }, state),
+                        h('span',{ class: 'text-secondary-400' }, 'ao5: ' + ao5),
+                        h('span', {class:'text-gray-100'}, 'ao12 ' + ao12),
+                        h('span', {class:'text-gray-100'}, 'mean: ' + themean),
+
+                    ])]
                 );
             },
             meta: {
@@ -63,7 +67,7 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
             },
             cell: ({ row }) => {
 
-                return h('div', { class: `${isBestSolveTime(row, player.id) ? 'text-primary' : 'text-gray-100'}` }, () => {
+                return h('div', { class: `${isBestSolveTime(row, player.id) ? 'text-primary-500' : 'text-gray-100'}` }, () => {
                     if (row.getValue(player.id) !== undefined) {
                         const obj = row.getValue(player.id) as { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' };
                         const timeReadable = timeForHuman(obj.time);
@@ -91,15 +95,15 @@ const stateForHuman = (state: PlayerState) => {
 
     switch (state) {
         case 'READY':
-            return ' (prêt)';
+            return 'prêt';
         case 'INSPECTING':
-            return ' (inspection...)';
+            return 'inspection...';
         case 'SOLVING':
-            return ' (résolution...)';
+            return 'résolution...';
         case 'CONFIRMATION':
-            return ' (confirmation...)';
+            return 'validation...';
         case 'SCORED':
-            return ' (fini !)';
+            return 'terminé !';
     }
 };
 
@@ -140,9 +144,9 @@ const mean = (playerId: string) => {
 
 const currentAvg = (avgOf: 5 | 12, playerId: string) => {
 
-    if (props.times.filter((solve) => solve[playerId] !== undefined ).length >= avgOf) {
+    if (props.times.filter((solve) => solve[playerId] !== undefined).length >= avgOf) {
         const lastSolves = props.times.slice(0, avgOf);
-        const nbOfDNF = lastSolves.filter((solve: any) => ( solve[playerId].finalPenality === 'DNF')).length;
+        const nbOfDNF = lastSolves.filter((solve: any) => (solve[playerId].finalPenality === 'DNF')).length;
         if (nbOfDNF > 1) {
             return 'DNF';
         } else {

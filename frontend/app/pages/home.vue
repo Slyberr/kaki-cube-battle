@@ -1,18 +1,19 @@
 <template>
-     
-  <UPageHero  
-    title="Bienvenue sur Kaki Cube VS !"
+
+  <UPageHero title="Bienvenue sur Kaki Cube VS !"
     description="Projet open-source qui permet de créer une salle instantanément et sans compte ! Créez des salles privées ou publiques et affrontez vos amis sur toutes les épreuves WCA."
     headline="v0.9">
-  
+
     <!--- Créer une room-->
-  
-      
+
+
     <UModal title="Créer une salle">
       <div class="flex justify-center">
         <UButton class="" icon="lucide:plus" label="Créer une nouvelle room" />
       </div>
       <template #body>
+        <div class="text-sm" :class="windowWidth < 1000 ? 'flex' : 'hidden'">Pour les appareils mobiles et tablette, Kaki
+          Cube est optimisé pour le format portrait.</div>
         <UForm :schema="schema" :state="state" class="relative flex flex-col m-8 space-y-6 " @submit="createRoom">
           <UFormField class="h-20" label="Nom de la salle" name="roomname">
             <UInput v-model="state.roomname"></UInput>
@@ -33,7 +34,8 @@
           </div>
 
 
-          <UButton type="submit" class="relative flex self-start ">Créer et accéder à la salle</UButton>
+          <UButton type="submit" :loading="btnLoading" class="flex self-start my-4">Créer et accéder à la salle
+          </UButton>
         </UForm>
       </template>
     </UModal>
@@ -50,7 +52,7 @@
 
             <div class="flex flex-col" v-for="room in rooms">
 
-              <div class="grid grid-cols-[3fr_3fr_1fr] w-full py-5">
+              <div class="grid grid-cols-[3fr_3fr_1fr] w-full py-5 gap-2">
                 <div class="flex items-center gap-4">
                   <p class="self-center">{{ room.roomname }} ({{ mapEvent.get(room.currentEvent)?.toDisplay }}) </p>
                   <UIcon :name="room.isPrivate ? 'lucide:lock' : 'lucide:globe'" />
@@ -61,18 +63,20 @@
                   <UIcon name="lucide:users" />
                 </div>
                 <UModal class="px-3" :title="`Rejoindre la salle ${room.roomname}`">
-                  <UButton class="relative" icon="lucide:arrow-up-right">Rejoindre</UButton>
+                  <UButton class="max-w-28 max-h-8 self-center" icon="lucide:arrow-up-right">Rejoindre</UButton>
                   <template #body>
                     <UForm :schema="schemaJoin" :state="stateJoin" class="m-8 space-y-4"
                       @submit="joinRoom(room.roomname)">
 
+                      <div class="text-sm" :class="windowWidth < 1000 ? 'flex' : 'hidden'">Pour les appareils mobiles et
+                        tablette, Kaki Cube est optimisé pour le format portrait.</div>
                       <UFormField label="Votre pseudo" name="pseudo">
                         <UInput type="input" v-model="stateJoin.pseudo"></UInput>
                       </UFormField>
                       <UFormField v-if="room.isPrivate" label="Mot de passe" name="password">
                         <UInput type="password" v-model="stateJoin.password"></UInput>
                       </UFormField>
-                      <UButton type="submit">Accéder à la salle</UButton>
+                      <UButton type="submit" :loading="btnLoading">Accéder à la salle</UButton>
                     </UForm>
                   </template>
                 </UModal>
@@ -94,7 +98,8 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import { separator } from '#build/ui';
+
+import { useWindowSize } from '@vueuse/core';
 import * as v from 'valibot';
 import { mapEvent, type EventID } from '~/types/solve';
 
@@ -115,22 +120,26 @@ const stateJoin = reactive<{ password: string, pseudo: string }>({
 const schema = computed(() => v.object({
   roomname: v.pipe(v.string(), v.minLength(3, 'Minimum 3 caractères.'), v.maxLength(20, 'Maximum de 20 caractères.')),
   password: state.isPrivate ? v.pipe(v.string(), v.minLength(4, 'Au moins 4 caractères'), v.maxLength(10, 'Maximum de 10 caractères.')) : v.pipe(v.string(), v.minLength(0)),
-  pseudo: v.pipe(v.string(), v.minLength(1, 'Une lettre au moins !'), v.maxLength(15, 'Maximum de 15 caractères')),
+  pseudo: v.pipe(v.string(), v.minLength(1, 'Une lettre au moins !'), v.maxLength(12, 'Maximum de 12 caractères')),
 }));
 
 const schemaJoin = computed(() => v.object({
   password: v.pipe(v.string()),
-  pseudo: v.pipe(v.string(), v.minLength(1, 'Une lettre au moins !'), v.maxLength(15, 'Maximum de 15 caractères')),
+  pseudo: v.pipe(v.string(), v.minLength(1, 'Une lettre au moins !'), v.maxLength(12, 'Maximum de 12 caractères')),
 }));
+
+const btnLoading = ref<boolean>(false);
+const windowWidth = useWindowSize().width.value;
+console.log(windowWidth)
 
 const socket = useSocket();
 
 definePageMeta({
   middleware: [
     function (to, from) {
-     
+
       //if the user leave the room with navigator navigation arrow.
-      if (from.path.includes('/room/') && to.path === '/home') {
+      if (from.path.includes('/room/') && to.path === '/home') {
         socket.emit('leave-room');
       }
     }
@@ -141,8 +150,10 @@ definePageMeta({
 
 onMounted(() => {
 
-  socket.on('go-to-room', async(roomname : string) => {
+  socket.on('go-to-room', async (roomname: string) => {
+
     await navigateTo('/room/' + roomname);
+    btnLoading.value = false
   });
 });
 
@@ -150,8 +161,10 @@ onBeforeUnmount(() => {
   socket.off('go-to-room');
 });
 
-const createRoom =  () => {
+const createRoom = () => {
+
   if (socket !== null) {
+    btnLoading.value = true;
     socket.emit('create-room', {
       roomname: state.roomname,
       isPrivate: state.isPrivate,
@@ -161,8 +174,10 @@ const createRoom =  () => {
   }
 };
 
-const joinRoom =  (currentRoom: string) => {
+const joinRoom = (currentRoom: string) => {
+
   if (socket !== null) {
+    btnLoading.value = true;
     socket.emit('join-room', {
       roomname: currentRoom,
       password: stateJoin.password,
