@@ -24,7 +24,7 @@ export default defineNuxtConfig({
 
   runtimeConfig : {
     mailUser : '',
-    mailPassword: ''
+    resendApiKey: '',
   },
 
   nitro: {

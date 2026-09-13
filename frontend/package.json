@@ -1,5 +1,4 @@
 {
-  
   "name": "app",
   "type": "module",
   "private": true,
@@ -20,6 +19,7 @@
     "nitropack": "^2.13.4",
     "nodemailer": "^10.0.1",
     "nuxt": "^4.4.8",
+    "resend": "^6.28.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.3.2",
@@ -30,5 +30,4 @@
   "devDependencies": {
     "@types/nodemailer": "^8.0.1"
   }
-  
 }
