@@ -11,17 +11,18 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
 
   const { pseudo, mail, message, type } = body;
-
+  
   try {
-    console.log('le mail' + config.mailUser);
+    
     const transported = nodemailer.createTransport({
       host: "smtp.ionos.fr",
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       auth: {
         user: config.mailUser,
         pass: config.mailPassword,
       },
+      connectionTimeout :10000,
     });
 
     await transported.sendMail({
