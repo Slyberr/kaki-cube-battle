@@ -26,7 +26,7 @@
             class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
             {{ scramble }}</p>
         </div>
-        <div class="flex pt-32 justify-center w-full">
+        <div class="flex justify-center w-full" :class="me.owner ? 'pt-34' : 'pt-42'">
           <Timer :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
             :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
             @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
