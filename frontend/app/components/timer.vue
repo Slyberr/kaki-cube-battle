@@ -9,7 +9,7 @@
       <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>{{
         timer.timeDisplayed }}</div>
 
-      <div class="absolute top-35 md:top-25 flex justify-center gap-2 max-[250px]:flex-col"
+      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[250px]:flex-col"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
           :disabled="inspectionPenality === 'DNF' || timer.state === 'WAITING_OTHER'" variant="card" indicator="hidden"
