@@ -83,7 +83,7 @@ export default defineNitroPlugin((nitroApp) => {
             event: '333',
             actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
-          socket.emit('go-to-room', room.roomname);
+          socket.emit('go-to-room', {ok : true, roomname : room.roomname});
           console.log(room.pseudo + ' created new room : ' + room.roomname)
 
           //when a new player come (event for players already in room)
@@ -96,6 +96,7 @@ export default defineNitroPlugin((nitroApp) => {
           io.emit('get-rooms', displayRoomsForHomePage(rooms));
         } else {
           socket.emit('error', 'Une room de ce nom existe déjà !');
+          socket.emit('go-to-room', {ok : false, roomname : ''});
         }
       },
     );
@@ -114,11 +115,13 @@ export default defineNitroPlugin((nitroApp) => {
 
           if (room && room.isPrivate && room.password !== info.password) {
             socket.emit('error', 'mot de passe incorrect !');
+            socket.emit('go-to-room', {ok : false, roomname : ''});
           } else if (
             room &&
             room.players.some((player) => player.pseudo === info.pseudo)
           ) {
             socket.emit('error', 'Le pseudo est déjà pris !');
+            socket.emit('go-to-room', {ok : false, roomname : ''});
           } else if (room) {
             room.players.push({
               id: socket.id,
@@ -132,7 +135,7 @@ export default defineNitroPlugin((nitroApp) => {
             rooms.set(room.roomname, room);
             //redirect on room/[id].vue
             console.log(info.pseudo + 'join this room: ' + info.roomname)
-            socket.emit('go-to-room', room.roomname);
+            socket.emit('go-to-room', {ok : true, roomname : room.roomname});
 
             //Emit to EVERYONE rooms updated
             io.emit('get-rooms', displayRoomsForHomePage(rooms));
