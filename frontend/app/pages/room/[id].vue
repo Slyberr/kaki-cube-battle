@@ -38,7 +38,7 @@
     </div>
     <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
      
-      <UTooltip :disabled="dropDownMenuEnabled" text="Les options sont activés quand tous le monde est 'prêt'.">
+      <UTooltip :disabled="dropDownMenuEnabled" text="Les options sont activées quand tous le monde est 'prêt'.">
         <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
       </UTooltip>
     </UDropdownMenu>
