@@ -37,7 +37,10 @@
       <div id="twisty-container" class="flex w-full justify-end " />
     </div>
     <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
-      <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" />
+     
+      <UTooltip :disabled="dropDownMenuEnabled" text="Les options sont activés quand tous le monde est 'prêt'.">
+        <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
+      </UTooltip>
     </UDropdownMenu>
 
 
