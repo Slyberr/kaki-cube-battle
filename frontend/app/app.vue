@@ -26,12 +26,9 @@
             <FeedBack />
           </template>
         </UModal>
-        <UModal title="Réaliser un don">
-          <UButton variant="ghost" class="text-muted" icon="lucide:piggy-bank" label="Réaliser un don"></UButton>
-          <template #body>
-            <FeedBack />
-          </template>
-        </UModal>
+        <UButton variant="ghost" class="text-muted" icon="lucide:coffee" label="M'offrir un thé"
+          href="https://buymeacoffee.com/slyber" target="_blank"></UButton>
+
 
       </template>
     </UHeader>
@@ -42,6 +39,10 @@
     </UMain>
 
     <UFooter>
+      <template #top>
+        <USeparator></USeparator>
+      </template>
+      <template #default>
       <UModal title="CGU">
         <UButton variant="ghost" class="text-muted" label="CGU"></UButton>
         <template #body>
@@ -62,6 +63,19 @@
           <Mentionslegales />
         </template>
       </UModal>
+      </template>
+
+      <template #right>
+        <div class="flex gap-3">
+        <NuxtLink to="https://discord.gg/B7tpmhWyV">
+          <NuxtImg  src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/discord-white-icon.png" width="20"></NuxtImg>
+        </NuxtLink>
+         <NuxtLink to="https://github.com/Slyberr/kaki-cube-battle">
+          <NuxtImg  src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/github-white-icon.png" width="20"></NuxtImg>
+        </NuxtLink>
+
+        </div>
+      </template>
     </UFooter>
 
   </UApp>

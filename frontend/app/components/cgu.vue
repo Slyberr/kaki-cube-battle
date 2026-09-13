@@ -63,13 +63,22 @@
             <li>- Matériel pour pérenniser ce site web et potentiellement d'autres (Raspberry pi, NAS, SSD, ondulateur...).</li>
         </ul>
         <br />
-        <p class="text-lg">4/ Droits applicables et litiges</p>
+
+
+        <p class="text-lg">4/ Formulaire de retour</p>
+        <p class="text-xs">
+            Vous avez la possibilité de faire un retour via le formulaire "Faire un retour" présent en haut de l'écran.
+            Pour plus d'informations sur le cheminement des données transmisses, veuillez consulter la section 3 de la politique de confidentialité ainsi que 
+            la section 1.3/ des mentions légales. 
+        </p>
+        <br />
+        <p class="text-lg">5/ Droits applicables et litiges</p>
         <p class="text-xs">
             Les présentes CGU sont soumises au droit français. En cas de litige relatif à l'utilisation de kakicube.com, et à défaut de résolution amiable, 
             les tribunaux français seront les seuls compétents, dans les conditions de droit commun.
         </p>
         <br />
-        <p class="text-lg">5/ Licence et propriété du code</p>
+        <p class="text-lg">6/ Licence et propriété du code</p>
         <p class="text-xs">
             Le code source de Kaki Cube VS est disponible publiquement sur <u><a href="https://github.com/Slyberr/kaki-cube-battle">Github©</a></u>.
             Ce projet est  sous licence <i>GNU AFFERO GENERAL PUBLIC LICENSE (AGPL)</i>.

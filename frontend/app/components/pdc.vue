@@ -18,16 +18,19 @@
             Ce site fonctionne sans base de données, c'est aussi pourquoi les données nécessaires au fonctionnement de
             la salle sont supprimées dès que possible pour des raisons de performance.
             <br />
-            Aucun cookie, même technique, n'est utilisé. 
-           
+            Aucun cookie, même technique, n'est utilisé.
+
         </p>
-         <br />
+        <br />
         <div class="text-md">1.1/ Responsable du traitement</div>
         <p class="text-xs">
-            Le responsable du traitement des données  dans ce document est Louis Presti, exploitant le site kakicube.com à titre personnel.
-            Pour toute question relative à vos données ou pour exercer vos droits (accès, rectification, suppression), vous pouvez utiliser l'adresse contact@kakicube.com.
-            <br/>
-            Les demandes concernant les données présentes dans les log (voir section 6) doivent également être relayées à cette adresse. Louis Presti se chargera, si nécessaire, de relayer
+            Le responsable du traitement des données dans ce document est Louis Presti, exploitant le site kakicube.com
+            à titre personnel.
+            Pour toute question relative à vos données ou pour exercer vos droits (accès, rectification, suppression),
+            vous pouvez utiliser l'adresse contact@kakicube.com.
+            <br />
+            Les demandes concernant les données présentes dans les log (voir section 6) doivent également être relayées
+            à cette adresse. Louis Presti se chargera, si nécessaire, de relayer
             la demande auprès de Railway © en tant que sous-traitant technique.
         </p>
         <br />
@@ -73,22 +76,35 @@
             serveur. Vous perdez alors la salle où vous étiez, vos scores ainsi que votre pseudo.
         </p>
         <br />
-         <div class="text-sm">2.2.1/ Potentielle amélioration possible</div>
-         <p class="text-xs">
+        <div class="text-sm">2.2.1/ Potentielle amélioration possible</div>
+        <p class="text-xs">
             Si cela est reclamé par la communauté, une persistance pourrait être mise en place.
-            Cela  permetterai de sauvegarder quelques états utiles comme l'utilisation ou non de l'inspection, le mode de saisie, le temps nécessaire avant de déclencher le chronomètre, etc.
+            Cela permetterai de sauvegarder quelques états utiles comme l'utilisation ou non de l'inspection, le mode de
+            saisie, le temps nécessaire avant de déclencher le chronomètre, etc.
             Cele implique une utilisation de cookie/session qui modifierai alors la politique de confidentialité.
-            Louis Presti s'engage à faire le maximum pour limiter l'utilisation de ces outils afin que Kaki Cube VS reste un endroit respecteux de votre vie privée. 
+            Louis Presti s'engage à faire le maximum pour limiter l'utilisation de ces outils afin que Kaki Cube VS
+            reste un endroit respecteux de votre vie privée.
         </p>
         <br />
         <div class="text-lg">3/ Le formulaire de retour</div>
         <p class="text-xs">
             Pendant votre session de jeu ou directement à l'accueil, vous pouvez décider de faire un retour afin de
             m'aider à inclure de nouvelles idées ou simplement me notifier un bug.
-            <br />
             Il vous est proposé de renseigner votre mail afin de, si besoin, vous fournir une réponse. Votre boite n'est
-            jamais utilisée pour envoyer un mail à contact@kakicube.com. Plus de précision dans la section 1.3/ des mentions légales.
-
+            jamais utilisée pour envoyer un mail à contact@kakicube.com. Plus de précision dans la section 1.3/ des
+            mentions légales.
+            <br />
+            <br />
+            Parce que l'abonnement pris à l'hébergeur Railway © (Hobby) ne permet pas d'avoir un seul port STMP ouvert
+            (voir section 1.3/ des mentions légales),
+            L'envoi d'email se fait par protocole HTTP grâce au sous-traitant Resend © qui réalise l'envoi d'email par
+            protocole STMP sur leur(s) serveur(s).
+            Les emails passent sur leurs serveurs et sont lisibles par Louis Presti lorsqu'il consulte son compte
+            personnel Resend ©.
+            Les traces de ces mails sont présentes durant 30 jours et sont susceptibles d'être consultées par le
+            sous-traitant pour des raisons légales.
+            <br />
+            <br />
             Votre mail ne sortira jamais de la boite mail contact@kakicube.com et ne sera utilisé que pour vous
             répondre.
             A rappeler que l'adresse mail contact@kakicube.com est deservie par IONOS © avec une configuration DNS
@@ -104,60 +120,68 @@
             <li>- vous le désirez, cela sera fait immédiatemment mais tous les échanges seront supprimées.</li>
             <li>- la proposition de la nouvelle fonctionnalité est réfusée ou validée, vous en serez informé.</li>
             <li>- si c'est un bug, lors de sa résolution, vous en serez informé.</li>
-            <li>- si je n'ai plus de nouvelles depuis un moment considérable lors d'une relance pour avoir des
+            <li>- si Louis Presti (détenteur de l'adresse mail contact@kakicube.com) n'a plus de nouvelles depuis un moment considérable lors d'une relance pour avoir des
                 précisions par exemple.</li>
         </ul>
         <br />
         <div class="text-lg">4/ Donation</div>
         <p class="text-xs">
-           kakicube.com propose une redirection vers le compte Buy me a Coffee © de Louis Presti. Veuillez consulter les CGU ainsi que les mentions légales avant toute donation.
+            kakicube.com propose une redirection vers le compte Buy me a Coffee © de Louis Presti. Veuillez consulter
+            les CGU ainsi que les mentions légales avant toute donation.
         </p>
         <br />
         <div class="text-lg">5/ Socket.io</div>
         <p class="text-xs">
             A l'instar des requêtes HTTP, les web sockets permettent de trasmettre des données client à serveur et
             serveur à client, à l'exception que les webs sockets permettent une écoute constante.
-            Socket.io peut contenir quelques informations sensibles comme la configuration de votre navigateur (empreinte
+            Socket.io peut contenir quelques informations sensibles comme la configuration de votre navigateur
+            (empreinte
             numérique) et possiblement votre adresse IP publique (à vérifier).
             <br />
             Votre IP publique est visible via les logs serveur, voir la section 6 juste en dessous.
         </p>
         <br />
-        <div class="text-lg">6/ Logs serveur</div>
+        <div class="text-lg">6/ Traces/logs du serveur</div>
         <p class="text-xs">
             Pour avoir une trace des évenements qui se déroulent sur le site, le serveur renvoie des logs qui sont
             accessible sur le compte Railway © associée à Louis Presti.
-            Tous ces logs sont exploités uniquement pour le site web et 
-            ne sont jamais visualisés ou retransmis à d'autres tiers que Railway ©, hébergeur et sous-traitant indirect du site web kakicube.com 
+            Tous ces logs sont exploités uniquement pour le site web et
+            ne sont jamais visualisés ou retransmis à d'autres tiers que Railway ©, hébergeur et sous-traitant indirect
+            du site web kakicube.com
             pour des obligations légales.
 
             Les logs sont conservés pendant 7 jours, conformément à l'abonnement actuel qu'utilise kakicube.com (Hobby).
-            Pour toute demande de suppression d'une information vous concernant directement ou non, veuillez vous référez à la section 1.1/.
-            <br/>
+            Pour toute demande de suppression d'une information vous concernant directement ou non, veuillez vous
+            référez à la section 1.1/.
+            <br />
+            <br />
             Les logs contiennent :
 
         </p>
         <br />
         <ul class="text-xs">
             <li>- l'ID qui vous est assigné lors que vous arrivez et partez du site kakicube.com</li>
-            <li>- a savoir, votre ID socket.io est associé à votre pseudo afin garder un lien entre votre utilisation du site et le pseudo que vous avez choisi dans une salle</li>
+            <li>- a savoir, votre ID socket.io est associé à votre pseudo afin garder un lien entre votre utilisation du
+                site et le pseudo que vous avez choisi dans une salle</li>
             <li>- L'information des arrivées et des départs de salles (pseudo)</li>
             <li>- Créer une salle + pseudo, rejoindre une salle + pseudo, salle supprimée</li>
             <li>- toutes les requêtes réseaux avec donc votre ip publique (v4/v6)</li>
-            <li>- Toutes les requêtes HTTP (récuperation des données du site, date et heure lorsque vous envoyez un retour)</li>
+            <li>- Toutes les requêtes HTTP (récuperation des données du site, date et heure lorsque vous envoyez un
+                retour)</li>
         </ul>
         <br />
-         <div class="text-lg">7/ Statistiques</div>
-         <p class="text-xs">
-            Railway © et Cloudflare © proposent chacun des statistiques générales sur les performances du site : 
-         </p>
-         <ul class="text-xs">
+        <div class="text-lg">7/ Statistiques</div>
+        <p class="text-xs">
+            Railway © et Cloudflare © proposent chacun des statistiques générales sur les performances du site :
+        </p>
+        <ul class="text-xs">
             <li>- Nombre de requêtes</li>
-            <li>- Nombre de visiteurs avec un top de Pays/Régions, les informations sont agrégées et non individualisées</li>
+            <li>- Nombre de visiteurs avec un top de Pays/Régions, les informations sont agrégées et non individualisées
+            </li>
             <li>- Usage CPU/Mémoire du site</li>
             <li>- Traffic réseau (complété par les logs réseaux)</li>
 
-         </ul>
+        </ul>
     </div>
 
 

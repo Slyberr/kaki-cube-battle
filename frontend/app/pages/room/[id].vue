@@ -14,34 +14,33 @@
   </UModal>
 
   <div class="flex flex-col">
-    <div>
-      <div v-if="me" class="flex flex-col items-center gap-4 w-full">
-        <div v-if="showPage" id="head-info" class="relative flex flex-col text-center w-full">
-          <h1 class="text-3xl">{{ roomname }}</h1>
 
-          <p v-if="me.owner">(Vous êtes le<i class="text-primary"> modérateur</i>)</p>
-          <p class="text-2xl">{{ puzzle }}</p>
-          <div class="absolute top-22 flex justify-center w-full">
-            <p
-              class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
-              {{ scramble }}</p>
-          </div>
-          <div class="flex pt-32 justify-center w-full">
-            <Timer 
-              :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
-              :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
-              @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
-              @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
-          </div>
+    <div v-if="me" class="flex flex-col items-center gap-4 w-full">
+      <div v-if="showPage" id="head-info" class="relative flex flex-col text-center w-full">
+        <h1 class="text-3xl">{{ roomname }}</h1>
+
+        <p v-if="me.owner">(Vous êtes le<i class="text-primary"> modérateur</i>)</p>
+        <p class="text-2xl">{{ puzzle }}</p>
+        <div class="absolute top-22 flex justify-center w-full">
+          <p
+            class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
+            {{ scramble }}</p>
         </div>
-
-        <div id="twisty-container" class="flex w-full justify-end " />
+        <div class="flex pt-32 justify-center w-full">
+          <Timer :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
+            :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
+            @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
+            @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
+        </div>
       </div>
-      <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
-        <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" />
-      </UDropdownMenu>
 
+      <div id="twisty-container" class="flex w-full justify-end " />
     </div>
+    <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
+      <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" />
+    </UDropdownMenu>
+
+
     <div v-if="me && showPage" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
       <TabBattle class="grow-8" v-if="roomPlayers.length > 0" :players="roomPlayers" :times="allSolves"
         :solve-id="actualSolveId" :me="me" />
@@ -90,6 +89,8 @@ const inputMode = ref<'KEYBOARD' | 'MANUALLY'>('KEYBOARD');
 const drawer = ref<TwistyPlayer>();
 const showPage = ref<boolean>(false);
 
+const twistyContainer = ref<HTMLElement | null>(null);
+
 const dropDownMenuEnabled = computed(() => roomPlayers.value.every((player) => player.state === 'READY'));
 const dropDownItems = computed((): DropdownMenuItem[][] => {
   return useGetDropDownMenu(
@@ -131,34 +132,31 @@ onMounted(() => {
       roomPlayers.value = info.players;
       scramble.value = info.scramble;
 
-      if (document.querySelector('twisty-player') === null) {
-        drawer.value = new TwistyPlayer();
-
-        drawer.value.puzzle = (mapEvent.get(info.event)!.toDrawer) as EventToDrawer;
-        drawer.value.alg = scramble.value;
-        drawer.value.visualization = '2D';
-        drawer.value.controlPanel = 'none';
-        drawer.value.background = 'none';
-        drawer.value.classList.add('w-60', 'sm:w-70', 'lg:w-80', 'xl:w-90', '2xl:w-100', 'max-h-30', 'md:max-h-40', 'xl:max-h-60');
-        nextTick();
-        const wrapper = document.getElementById('twisty-container')!;
-        wrapper.appendChild(drawer.value);
-      }
-
       if (roomPlayers.value.length > 0) {
         me.value = roomPlayers.value[roomPlayers.value.length - 1]!;
+        if (document.querySelector('twisty-player') === null) {
+          drawer.value = new TwistyPlayer();
+
+          drawer.value.puzzle = (mapEvent.get(info.event)!.toDrawer) as EventToDrawer;
+          drawer.value.alg = scramble.value;
+          drawer.value.visualization = '2D';
+          drawer.value.controlPanel = 'none';
+          drawer.value.background = 'none';
+          drawer.value.classList.add('w-60', 'sm:w-70', 'lg:w-80', 'xl:w-90', '2xl:w-100', 'max-h-30', 'md:max-h-40', 'xl:max-h-60');
+          twistyContainer.value = document.getElementById('twisty-container');
+          twistyContainer.value?.appendChild(drawer.value);
+        }
+
+        //Scenario : i'm new player but the room already begin 
+        allSolves.value = info.allSolves.length !== 0 ? info.allSolves : [{ solveId: 0 }];
+        actualSolveId.value = info.actualSolveId;
+        puzzle.value = mapEvent.get(info.event)?.toDisplay ?? '';
       }
 
-      //Scenario : i'm new player but the room already begin 
-      allSolves.value = info.allSolves.length !== 0 ? info.allSolves : [{ solveId: 0 }];
-      actualSolveId.value = info.actualSolveId;
-      puzzle.value = mapEvent.get(info.event)?.toDisplay ?? '';
     } else {
       //It's happend when a user comeback to page with next arrow navigation.
-      return navigateTo('/home?test');
+      return navigateTo('/home');
     }
-
-
   });
 
   //new player just come / someone change his state
