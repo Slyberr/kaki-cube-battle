@@ -1,11 +1,13 @@
 <template>
-
-  <UPageHero  title="Bienvenue sur Kaki Cube !"
-    description="Projet open-source qui permet de créer une salle instantanément et sans compte !  Créez des salles privées ou publiques et affrontez vos amis sur toutes les épreuves WCA."
-    headline="v0.1">
-
+     
+  <UPageHero  
+    title="Bienvenue sur Kaki Cube VS !"
+    description="Projet open-source qui permet de créer une salle instantanément et sans compte ! Créez des salles privées ou publiques et affrontez vos amis sur toutes les épreuves WCA."
+    headline="v0.9">
+  
     <!--- Créer une room-->
-
+  
+      
     <UModal title="Créer une salle">
       <div class="flex justify-center">
         <UButton class="" icon="lucide:plus" label="Créer une nouvelle room" />

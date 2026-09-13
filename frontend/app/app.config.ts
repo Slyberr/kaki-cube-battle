@@ -33,5 +33,10 @@ export default defineAppConfig({
         },
       },
     },
+    header : {
+      slots : {
+        title : 'pointer-events-none'
+      }
+    }
   },
 });

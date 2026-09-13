@@ -1,11 +1,11 @@
 <template>
-   <p class="">Les mentions légales pourraient évoluer, veuillez les lire attentivement (Dernière maj : 12 sept 2026).</p>
+   <p class="">Les mentions légales pourraient évoluer, veuillez les lire attentivement (Dernière maj : 13 sept 2026).</p>
    <div class="text-muted">
       <p class="text-lg">0/ Rappel sur les mentions légales</p>
       <p class="text-xs"> La loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique vise à encadrer un certain nombre de concepts numériques sur internet.
 
          Cela concerne notamment la responsabilité des hébergeurs ou la transparence des sites marchands.
-         Kaki Cube n'est pas totalement ciblé par cette loi, mais il est nécessaire de fournir un certain nombre d'informations afin d'être le plus clair possible concernant la mise en oeuvre de ce site web. 
+         Kaki Cube VS n'est pas totalement ciblé par cette loi, mais il est nécessaire de fournir un certain nombre d'informations afin d'être le plus clair possible concernant la mise en oeuvre de ce site web. 
       </p>
       <br/>
       <p class="text-lg">1/ Présentation de l'environnement du projet</p>
@@ -13,18 +13,18 @@
       <p class="text-md"> 1.1/ Collaborateur</p>
      
       <p class="text-xs">
-         Le site Kaki Cube possède un seul et unique collaborateur : <strong>Louis Presti</strong>, particulier, non professionnel.
+         Le site Kaki Cube VS possède un seul et unique collaborateur : <strong>Louis Presti</strong>, particulier, non professionnel.
       </p>
       <br/>
       <p class="text-md">
          1.2/ Hébergement et nom de domaine
       </p>
       <p class="text-xs">
-         Le site est herbergé sur les serveur de <u><a href="https://railway.com/">Railway ©</a></u>.
+         Le site est herbergé sur les serveur de Railway ©.
          <br/>
-         Le nom de domaine  <i>kakicube.com</i> ainsi que l'adresse mail contact@kakicube.com ont été réservés sur <u><a href="https://www.ionos.fr">IONOS ©</a></u>.
+         Le nom de domaine  <i>kakicube.com</i> ainsi que l'adresse mail contact@kakicube.com ont été réservés sur IONOS ©.
          <br/>
-         La configuration DNS du nom de domaine se fait sur <u><a href="https://www.cloudflare.com/">CloudFare ©</a></u> afin de permettre une résolution de nom sans 'www' grâce à un <i>CNAME Flattening</i>
+         La configuration DNS du nom de domaine se fait sur Cloudflare © afin de permettre une résolution de nom sans 'www' grâce à un <i>CNAME Flattening</i>
          (car Railway ne fourni pas de A ou de AAAA).
          <br/>
          Le <i>CNAME Flattening</i> n'est pas disponible IONOS ©.
@@ -43,7 +43,7 @@
          Que vous renseignez ou non votre adresse mail, aucun message n'est envoyé avec votre propre boite : c'est l'adresse contact@kakicube.com qui s'auto-envoie votre message.
          <br/>
          <br/>
-         "M'offrir un thé" vous redirigera sur le compte <u><a href="https://buymeacoffee.com/">Buy me a Coffee ©</a></u> de Louis Presti.
+         "M'offrir un thé" vous redirigera sur le compte Buy me a Coffee © de Louis Presti.
          Buy Me a coffee est une plateforme qui permet de réaliser des dons à une personne morale ou physique afin de soutenir cette dernière.
          Les dons sont traités directement par cette plateforme.
          <br/>
@@ -60,11 +60,33 @@
             <li> Railway 
                
                <ul>
-                  <li> Nom complet : Railway Corporation</li>
-                  <li> Adresse postale : 548 Market St PMB 68956, San Francisco, CA 94104, États-Unis</li>
-                  <li> Téléphone : +1 (415) 707-7675 </li>
-                  <li> Mails : team@railway.com ou privacy@railway.com</li>
-                  <li> Site internet : <u><a href="https://railway.com">Site de Railway</a></u></li>
+                  <li> Nom complet: Railway Corporation</li>
+                  <li> Adresse postale: 548 Market St PMB 68956, San Francisco, CA 94104, États-Unis</li>
+                  <li> Téléphone: +1 (415) 707-7675 </li>
+                  <li> Mails: team@railway.com ou privacy@railway.com</li>
+                  <li> Site internet:  "https://railway.com"</li>
+               </ul>
+               <br/>
+            </li>
+              <li> IONOS 
+               
+               <ul>
+                  <li> Nom complet: IONOS SARL</li>
+                  <li> Adresse postale: 7 Place de la Gare, 57200 Sarreguemines, France</li>
+                  <li> Téléphone: 09 70 80 89 11 </li>
+                  <li> Mails: info@ionos.fr (support), ou litiges@ionos.fr pour signaler un contenu illicite</li>
+                  <li> Site internet:  "https://www.ionos.fr"</li>
+               </ul>
+               <br/>
+            </li>
+              <li> Cloudflare 
+               
+               <ul>
+                  <li> Nom complet: Cloudflare, Inc.</li>
+                  <li> Adresse postale: 101 Townsend St, San Francisco, CA 94107, États-Unis</li>
+                  <li> Téléphone: 1-888-993-5273 </li>
+                  <li> Mails: privacyquestions@cloudflare.com (questions vie privée), sar@cloudflare.com (exercice des droits RGPD)</li>
+                  <li> Site internet:  "https://www.cloudflare.com"</li>
                </ul>
                <br/>
             </li>
@@ -78,7 +100,7 @@
       <p class="text-lg">3/ Transparence du projet</p>
      
       <p class="text-xs">
-         Kaki Cube Battle est un projet open source disponible sur <u><a href="https://github.com/Slyberr/kaki-cube-battle">Github©</a></u>, vous pouvez à tout moment consulter le code.
+         Kaki Cube est un projet open source sous licence AGPL-3.0 disponible sur <u><a href="https://github.com/Slyberr/kaki-cube-battle">Github©</a></u>, vous pouvez à tout moment consulter le code.
          En ce qui concerne les données personnelles, la vie privée et les collectes de données, consultez les CGU et la politique de confidentialité.
       </p>
 

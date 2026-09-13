@@ -3,9 +3,9 @@
   <UApp>
     <UHeader mode="drawer">
       <template #title>
-        <NuxtLink to="/home">
-          <NuxtImg src="/kbc.svg" width="35" />
-        </NuxtLink>
+        <div class="flex w-full justify-center">
+          <NuxtImg src="/kbc.svg" width="40" />
+        </div>
       </template>
 
       <UModal title="Faire un retour">
@@ -45,14 +45,14 @@
       <UModal title="CGU">
         <UButton variant="ghost" class="text-muted" label="CGU"></UButton>
         <template #body>
-          <Cgu/>
+          <Cgu />
         </template>
       </UModal>
 
       <UModal title="Politique de confidentialité">
         <UButton variant="ghost" class="text-muted" label="Politique de confidentialité"></UButton>
         <template #body>
-          <Pdc/>
+          <Pdc />
         </template>
       </UModal>
 
