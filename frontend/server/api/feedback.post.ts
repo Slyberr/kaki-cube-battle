@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
   const { pseudo, mail, message, type } = body;
 
   try {
+    console.log('le mail' + config.mailUser);
     const transported = nodemailer.createTransport({
       host: "smtp.ionos.fr",
       port: 465,
