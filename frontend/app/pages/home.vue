@@ -150,10 +150,13 @@ definePageMeta({
 
 onMounted(() => {
 
-  socket.on('go-to-room', async (roomname: string) => {
-
-    await navigateTo('/room/' + roomname);
-    btnLoading.value = false
+  socket.on('go-to-room', async (data : {ok: boolean,roomname: string}) => {
+    btnLoading.value = false;
+    if (data.ok) {
+      await navigateTo('/room/' + data.roomname);
+    }
+    
+   
   });
 });
 
