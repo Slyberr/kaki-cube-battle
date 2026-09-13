@@ -1,5 +1,5 @@
 <template>
-   <div class="flex flex-col border-secondary m-4 sm:m-2">
+   <div class="flex flex-col  h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 border-secondary mx-4 sm:mx-2">
       <p class="text-primary p-2">Tchat de <i>{{ props.roomname }}</i></p>
 
 
@@ -19,21 +19,23 @@
          </div>
          <div class="w-full border m-0"></div>
          <p class="text-sm p-4">
-            ⚠️ CONCERNANT L'UTILISATION DU CHAT :
+            ⚠️ En écrivant votre message, vous acceptez ceci :
             <br>
             <br>
-            - Ce chat n'est pas chiffré de bout en bout : Veillez à ne transmettre AUCUNE information sensible (même votre prénom par exemple).
+            - Ce channel n'est pas chiffré de bout en bout : Veillez à ne transmettre AUCUNE information sensible (même votre prénom par exemple).
 
             <br>
             - Vous n'avez pas accès à l'ancien historique de message.
             <br>
             - Les messages ne sont conservés qu'en local : le serveur ne fait que transiter les données.
             <br>
-            - Lorsque la dernière personne est partie ou que la room est supprimée, les messages sont
+            - Lorsque la dernière personne est partie ou que la salle est supprimée, les messages sont
             naturellement supprimés.
             <br>
             - Restez courtois, respecteux et veuillez ne pas céder à l'expression d'une quelqueconque haine.
             <br>
+            <br>
+            - Vous êtes le seul responsable et unique responsable du contenu transmis dans ce channel.
          </p>
 
       </div>
@@ -48,6 +50,12 @@
 
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 import { Socket } from 'socket.io-client';
 import type { Message } from '~/types/chat';
 import type { Player } from '~/types/player';
@@ -68,7 +76,7 @@ onBeforeUnmount(() => {
 
 const sendMessage = () => {
    if (inputModel.value.trim().length !== 0) {
-      props.socket.emit('send-message', inputModel.value, props.roomname);
+      props.socket.emit('send-message', inputModel.value);
      
    }
    inputModel.value = '';

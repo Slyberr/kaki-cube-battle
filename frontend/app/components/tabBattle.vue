@@ -1,9 +1,15 @@
 <template>
-    <UTable sticky class="max-h-110 mx-2 border border-gray-400 rounded-sm" :columns="colonnes" :data="props.times"/>
+    <UTable sticky class="h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 mx-2 border border-gray-400 rounded-sm" :columns="colonnes" :data="props.times"/>
 </template>
 
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 import { timeForHuman } from '#imports';
 import type { TableColumn, TableRow } from '@nuxt/ui'
 import type { Player, PlayerState } from '~/types/player';

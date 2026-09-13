@@ -1,4 +1,9 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
   devtools: { enabled: false },
@@ -18,8 +23,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig : {
-    gmailUser : '',
-    gmailPassword: ''
+    mailUser : '',
+    mailPassword: ''
   },
 
   nitro: {

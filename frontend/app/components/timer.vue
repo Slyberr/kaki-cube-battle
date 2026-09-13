@@ -1,47 +1,59 @@
 <template>
+  <div
+     id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[30%]" :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none' ">
 
-  <div v-if="inputMode === 'KEYBOARD'" class="relative flex flex-col items-center gap-3">
+
+    <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
 
 
-    <div class="text-2xl text-center sm:text-3xl lg:text-4xl transition ease-linear duration-75 select-none" :class=timer.color>{{
-      timer.timeDisplayed }}</div>
+      <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>{{
+        timer.timeDisplayed }}</div>
 
-    <div class="absolute -top-12 flex justify-center gap-2"
-      v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
-      <URadioGroup v-model:model-value="penalitySelected" :items="radioSolvePenalities"
-        :disabled="inspectionPenality === 'DNF' || timer.state === 'WAITING_OTHER'" variant="card" indicator="hidden"
-        orientation="horizontal">
-      </URadioGroup>
-      <UButton class="my-2" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel" @click="saveTime" />
+      <div class="absolute top-35 md:top-25 flex justify-center gap-2 max-[250px]:flex-col"
+        v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
+        <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
+          :disabled="inspectionPenality === 'DNF' || timer.state === 'WAITING_OTHER'" variant="card" indicator="hidden"
+          orientation="horizontal">
+        </URadioGroup>
+        <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel"
+          @click="saveTime" />
+      </div>
     </div>
-  </div>
-  <!--if manual mod-->
-  <div v-else class="flex flex-col items-center w-full">
-    <template v-if="activeInspection && (timer.state === 'BEGIN_STATE' || timer.state === 'INSPECTION')">
-      <div class="text-2xl text-center sm:text-3xl lg:text-4xl transition ease-linear duration-75 select-none" :class=timer.color>
-        {{ timer.timeDisplayed }}</div>
-      <template v-if="timer.state === 'INSPECTION'">
-        <p class="text-sm text-center m-4">(Appuyez sur Espace pour terminer l'inspection)</p>
+    <!--if manual mod-->
+    <div v-else class="flex flex-col justify-center items-center w-full">
+      <template v-if="activeInspection && (timer.state === 'BEGIN_STATE' || timer.state === 'INSPECTION')">
+        <div class="text-2xl text-center sm:text-3xl lg:text-4xl transition ease-linear duration-75 select-none"
+          :class=timer.color>
+          {{ timer.timeDisplayed }}</div>
+        <template v-if="timer.state === 'INSPECTION'">
+          <p class="text-sm text-center m-4">(Appuyez sur Espace pour terminer l'inspection)</p>
+        </template>
       </template>
-    </template>
-    <template v-else>
-      <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center" @submit="saveTime">
-        <UFormField class="">
-          <UInput v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
-            maxlength="6" :disabled="manualTime.disabled" />
-        </UFormField>
-        <UButton type="submit" class="text-xs" label="OK"></UButton>
-      </UForm>
-      <p>{{ "Votre temps est : " + isTimeFormatOk(manualTime.input)[1] }}</p>
+      <template v-else>
+        <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center" @submit="saveTime">
+          <UFormField class="">
+            <UInput v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
+              maxlength="6" :disabled="manualTime.disabled" />
+          </UFormField>
+          <UButton type="submit" class="text-xs" label="OK"></UButton>
+        </UForm>
+        <p>{{ "Votre temps est : " + isTimeFormatOk(manualTime.input)[1] }}</p>
 
-    </template>
+      </template>
+    </div>
   </div>
 
 </template>
 
 <script lang="ts" setup>
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
 
 import type { RadioGroupItem } from '@nuxt/ui';
+
 import type { PlayerState } from '~/types/player';
 import type { Penality } from '~/types/solve';
 
@@ -58,14 +70,16 @@ const timer = reactive<{
   timeFormated: string,
   timeDisplayed: string,
   state: 'BEGIN_STATE' | 'INSPECTION' | 'READY_TO-SOLVE' | 'RUNNING' | 'CONFIRM' | 'WAITING_OTHER',
-  color: string
+  color: string,
+  border: string
 }>
   ({
     timeDisplayed: '0.00',
     timeFormated: '0.00',
     realTime: 0.00,
     state: 'BEGIN_STATE',
-    color: 'text-gray-50'
+    color: 'text-gray-50',
+    border: 'text-gray-500 border-2 rounded-lg'
   });
 
 const manualTime = reactive<{ input: string, disabled: boolean }>({
@@ -106,8 +120,10 @@ onMounted(() => {
   window.addEventListener('keydown', keyDownSpaceManager);
   window.addEventListener('keyup', keyUpSpaceManager);
   window.addEventListener('keydown', onKeyDownEnter);
-  document.getElementById('head-info')!.addEventListener('touchend', timerUpManager);
-  document.getElementById('head-info')!.addEventListener('touchstart', timerDownManager);
+  //For mobile and tablets.
+  document.getElementById('timer')!.addEventListener('touchend', timerUpManager);
+  document.getElementById('timer')!.addEventListener('touchstart', timerDownManager);
+  document.getElementById('timer')!.addEventListener('contextmenu', handlecontextMenu);
 });
 
 //UTILS don't want to make a utils/UseKeyXSpaceManager beacause lot of variables to send.
@@ -125,8 +141,8 @@ const keyUpSpaceManager = (event: KeyboardEvent) => {
 
 const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
 
-  //exit if it's the tchat input -> can make whitespace.
-  if ((event.target as HTMLElement).tagName === 'INPUT') {
+  //exit if it's the tchat input or feedback form -> can make whitespace.
+  if ((event.target as HTMLElement).tagName === 'INPUT' || (event.target as HTMLElement).tagName === 'TEXTAREA') {
     return;
   }
 
@@ -143,13 +159,15 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
     switch (timer.state) {
       case 'BEGIN_STATE':
         if (!props.activeInspection) {
-          timer.color = 'text-red-400';
+          timer.color = 'text-error';
+          timer.border = 'text-error border-2 rounded-lg';
           timerHoldingBeforeGo();
         }
         break;
       case 'INSPECTION':
         if (props.activeInspection) {
-          timer.color = 'text-red-400';
+          timer.color = 'text-error';
+          timer.border = 'text-error border-2 rounded-lg';
           timerHoldingBeforeGo();
           break;
         }
@@ -183,8 +201,8 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
 }
 
 const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
-  //Disabled the timer fonction on input tag
-  if ((event.target as HTMLElement).tagName === 'INPUT') {
+  //exit if it's the tchat input or feedback form -> can make whitespace.
+  if ((event.target as HTMLElement).tagName === 'INPUT' || (event.target as HTMLElement).tagName === 'TEXTAREA') {
     return;
   }
 
@@ -197,6 +215,7 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
         } else {
           //press bar not pressed enough (when inspection disactivated)
           timer.color = 'text-gray-50';
+          timer.border = 'text-gray-500 border-2 rounded-lg';
           clearInterval(holdingSpaceId.value);
         }
 
@@ -205,6 +224,7 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
         //press bar not pressed enough (when inspection activated)
         if (props.activeInspection) {
           timer.color = 'text-gray-50';
+          timer.border = 'text-gray-500 border-2 rounded-lg';
           clearInterval(holdingSpaceId.value);
         }
 
@@ -212,6 +232,7 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
       //When user pressed space bar enough to start the timer.
       case 'READY_TO-SOLVE':
         timer.color = 'text-gray-50';
+        timer.border = 'text-gray-500 border-2 rounded-lg';
         timer.state = 'RUNNING';
         emits('playerChangeState', 'SOLVING');
         if (props.activeInspection) {
@@ -268,6 +289,8 @@ const onKeyDownEnter = (event: KeyboardEvent) => {
     saveTime();
   }
 };
+
+const handlecontextMenu = (e : Event) => e.preventDefault();
 
 /**
  * code to create Inspection with penalities (+2 and DNF) or not if manual.
@@ -326,7 +349,7 @@ const beginInspection = () => {
       } else {
         timer.state = 'CONFIRM';
         emits('playerChangeState', 'CONFIRMATION');
-        clearInterval(inspectionId.value); 
+        clearInterval(inspectionId.value);
       }
     }, 1000);
   }
@@ -393,6 +416,7 @@ const timerHoldingBeforeGo = () => {
 
   holdingSpaceId.value = setTimeout(() => {
     timer.color = 'text-emerald-400';
+    timer.border = 'text-emerald-600 border-2 rounded-lg';
     timer.state = 'READY_TO-SOLVE';
   }, props.readyHoldingTime * 1000);
 };
@@ -437,8 +461,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('keyup', keyUpSpaceManager);
   window.removeEventListener('keydown', keyDownSpaceManager);
   window.removeEventListener('keydown', onKeyDownEnter);
-  document.getElementById('head-info')!.removeEventListener('touchend', timerUpManager);
-  document.getElementById('head-info')!.removeEventListener('touchstart', timerDownManager);
+  document.getElementById('timer')!.removeEventListener('touchend', timerUpManager);
+  document.getElementById('timer')!.removeEventListener('touchstart', timerDownManager);
+  document.getElementById('timer')!.removeEventListener('contextmenu',handlecontextMenu );
 });
 
 </script>

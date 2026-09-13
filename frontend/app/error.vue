@@ -19,6 +19,12 @@
 
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 import type { NuxtError } from '#app';
 
 const props = defineProps<{ error: NuxtError }>()

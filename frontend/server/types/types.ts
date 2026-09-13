@@ -39,10 +39,10 @@ export type EventID =
   | 'sq1';
 
 export type Room = {
+  roomname : string;
   password?: string;
   isPrivate: boolean;
   players: Player[];
-  nbrPlayers: number;
   currentSolve: Solve;
   allSolves: Solve[];
   actualSolveId: number;

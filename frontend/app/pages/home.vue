@@ -1,11 +1,13 @@
 <template>
-
-  <UPageHero class="h-full" title="Bienvenue sur KCB !"
-    description="Kaki Cube Battle est un projet open source qui permet de créer une salle instantanément et sans compte !  Créez des salles privées ou publiques et affrontez vos amis sur toutes les épreuves WCA."
-    headline="v0.1">
-
+     
+  <UPageHero  
+    title="Bienvenue sur Kaki Cube VS !"
+    description="Projet open-source qui permet de créer une salle instantanément et sans compte ! Créez des salles privées ou publiques et affrontez vos amis sur toutes les épreuves WCA."
+    headline="v0.9">
+  
     <!--- Créer une room-->
-
+  
+      
     <UModal title="Créer une salle">
       <div class="flex justify-center">
         <UButton class="" icon="lucide:plus" label="Créer une nouvelle room" />
@@ -50,7 +52,7 @@
 
               <div class="grid grid-cols-[3fr_3fr_1fr] w-full py-5">
                 <div class="flex items-center gap-4">
-                  <p class="self-center">{{ room.roomName }} ({{ mapEvent.get(room.currentEvent)?.toDisplay }}) </p>
+                  <p class="self-center">{{ room.roomname }} ({{ mapEvent.get(room.currentEvent)?.toDisplay }}) </p>
                   <UIcon :name="room.isPrivate ? 'lucide:lock' : 'lucide:globe'" />
                 </div>
 
@@ -58,11 +60,11 @@
                   <p>{{ room.length }}</p>
                   <UIcon name="lucide:users" />
                 </div>
-                <UModal class="px-3" :title="`Rejoindre la salle ${room.roomName}`">
+                <UModal class="px-3" :title="`Rejoindre la salle ${room.roomname}`">
                   <UButton class="relative" icon="lucide:arrow-up-right">Rejoindre</UButton>
                   <template #body>
                     <UForm :schema="schemaJoin" :state="stateJoin" class="m-8 space-y-4"
-                      @submit="joinRoom(room.roomName)">
+                      @submit="joinRoom(room.roomname)">
 
                       <UFormField label="Votre pseudo" name="pseudo">
                         <UInput type="input" v-model="stateJoin.pseudo"></UInput>
@@ -86,11 +88,17 @@
 </template>
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 import { separator } from '#build/ui';
 import * as v from 'valibot';
 import { mapEvent, type EventID } from '~/types/solve';
 
-const rooms = useState<{ roomName: string, isPrivate: boolean, currentEvent: EventID; length: number }[]>('rooms');
+const rooms = useState<{ roomname: string, isPrivate: boolean, currentEvent: EventID; length: number }[]>('rooms');
 
 const state = reactive<{ roomname: string, isPrivate: false, password: string, pseudo: string }>({
   roomname: '',
@@ -115,26 +123,26 @@ const schemaJoin = computed(() => v.object({
   pseudo: v.pipe(v.string(), v.minLength(1, 'Une lettre au moins !'), v.maxLength(15, 'Maximum de 15 caractères')),
 }));
 
+const socket = useSocket();
+
 definePageMeta({
   middleware: [
     function (to, from) {
-      if (from.path.includes('/room/') && !to.query.return) {
-        const redirectToast = useToast();
-        redirectToast.add({
-          title: 'Redirection',
-          description: "Quelque chose d'inattendu s'est produit, vous avez été redirigé à l'accueil",
-          duration: 6000
-        })
+     
+      //if the user leave the room with navigator navigation arrow.
+      if (from.path.includes('/room/') && to.path === '/home') {
+        socket.emit('leave-room');
       }
     }
   ]
 });
 
-let socket = useSocket();
+
 
 onMounted(() => {
-  socket.on('go-to-room', (roomName) => {
-    navigateTo('/room/' + roomName);
+
+  socket.on('go-to-room', async(roomname : string) => {
+    await navigateTo('/room/' + roomname);
   });
 });
 
@@ -142,10 +150,10 @@ onBeforeUnmount(() => {
   socket.off('go-to-room');
 });
 
-const createRoom = async () => {
+const createRoom =  () => {
   if (socket !== null) {
     socket.emit('create-room', {
-      roomName: state.roomname,
+      roomname: state.roomname,
       isPrivate: state.isPrivate,
       password: state.password,
       pseudo: state.pseudo
@@ -153,10 +161,10 @@ const createRoom = async () => {
   }
 };
 
-const joinRoom = async (currentRoom: string) => {
+const joinRoom =  (currentRoom: string) => {
   if (socket !== null) {
     socket.emit('join-room', {
-      roomName: currentRoom,
+      roomname: currentRoom,
       password: stateJoin.password,
       pseudo: stateJoin.pseudo
     })

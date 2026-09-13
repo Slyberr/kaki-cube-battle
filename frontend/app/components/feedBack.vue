@@ -11,11 +11,11 @@
                 />
             </UFormField>
             
-            <UFormField  label="Votre email (optionnel, si vous voulez une réponse)">
+            <UFormField  label="Votre email (optionnel)">
                 <UInput 
                 v-model="formData.mail" 
-                placeholder="example@test.fr" 
-                class="w-full md:w-[40%]" 
+                placeholder="Ne renseignez le champ que si vous voulez une réponse." 
+                class="w-full md:w-[80%]" 
                 size="xl"                
                 />
             </UFormField>
@@ -40,7 +40,7 @@
                 :items="items" 
                 required></USelect>
             </UFormField>
-            <UButton type="submit" class="flex  justify-center text-center w-20 my-4" label="Envoyer"/>
+            <UButton type="submit" class="flex w-30 my-4" :label="buttonSend.text" :loading="buttonSend.loading"/>
         </UForm>
     </div>
 
@@ -49,9 +49,14 @@
 </template>
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
 
-
-const items = ref(['Bug', 'UI/UX (Design)', 'Nouvelle fonctionnalité'])
+const items = ref(['Bug', 'UI/UX (Design)', 'Nouvelle fonctionnalité', 'Autre'])
+const waiting = ref<boolean>(false);
 const formData = reactive<{pseudo : string,mail: string, text : string,type : string}>({
     pseudo : '',
     mail : '',
@@ -61,22 +66,42 @@ const formData = reactive<{pseudo : string,mail: string, text : string,type : st
 useHead({
   title: 'KCB | Feedback' 
 });
+
+const buttonSend = reactive<{text: string,loading: boolean}>({
+    text : 'Envoyer',
+    loading : false
+})
 const toast = useToast();
 
 
 const sendMail = async() => {
+    waiting.value = true;
+    buttonSend.text = 'Envoi...';
+    buttonSend.loading = true;
     const [ok,message] = await useSendFeedBack(formData.pseudo,formData.mail,formData.text,formData.type);
+    
     if (ok) {
+        formData.pseudo = '';
+        formData.mail = '';
+        formData.text = '';
+        formData.type = '';
+        buttonSend.text = 'Envoyer';
+        buttonSend.loading = false;
+        waiting.value = false;
         toast.add({
             title : 'Retour envoyé !',
             description : message
-        })
+        });
     } else {
+        buttonSend.text = 'Envoyer';
+        buttonSend.loading = false;
+        waiting.value = false;
+
         toast.add({
             title : 'Erreur Serveur.',
             description : message,
             duration: 7000
-        })
+        });
     }
 }
 </script>

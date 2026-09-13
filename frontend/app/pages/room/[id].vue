@@ -1,4 +1,5 @@
 <template>
+
   <UModal>
     <UButton color="primary" variant="ghost" label="Retour" icon="lucide:arrow-left" />
     <template #content="{ close }">
@@ -15,44 +16,52 @@
   <div class="flex flex-col">
     <div>
       <div v-if="me" class="flex flex-col items-center gap-4 w-full">
-        <div id="head-info" class="flex flex-col text-center w-full">
-          <h1 class="text-3xl">{{ roomName }}</h1>
+        <div v-if="showPage" id="head-info" class="relative flex flex-col text-center w-full">
+          <h1 class="text-3xl">{{ roomname }}</h1>
 
           <p v-if="me.owner">(Vous êtes le<i class="text-primary"> modérateur</i>)</p>
           <p class="text-2xl">{{ puzzle }}</p>
-          <p
-            class="text-center m-2 text-xs sm:text-sm md:text-base 2xl:text-lg h-20 sm:h-28 md:h-32  ">
-            {{ scramble }}</p>
-
-             <Timer class="h-20 timer flex justify-center" :local-player-state="localPlayerState"
-            :ready-holding-time="readyHoldingTime" :active-inspection="inspection" :input-mode="inputMode"
-            :audios="audiosForInspection"
-            @player-change-state="(state: PlayerState) => { socket.emit('change-state', roomName, state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
-            @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
+          <div class="absolute top-22 flex justify-center w-full">
+            <p
+              class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
+              {{ scramble }}</p>
+          </div>
+          <div class="flex pt-32 justify-center w-full">
+            <Timer 
+              :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
+              :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
+              @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
+              @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
+          </div>
         </div>
 
-          <div id="twisty-container" class="flex w-full justify-end" />
+        <div id="twisty-container" class="flex w-full justify-end " />
       </div>
-      <UDropdownMenu :items="dropDownItems" :disabled="!dropDownMenuEnabled">
+      <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
         <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" />
       </UDropdownMenu>
 
     </div>
-    <div v-if="me" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr] lg:grid-cols-[2fr_1fr] w-full ">
+    <div v-if="me && showPage" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
       <TabBattle class="grow-8" v-if="roomPlayers.length > 0" :players="roomPlayers" :times="allSolves"
         :solve-id="actualSolveId" :me="me" />
 
-      <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="(roomName as string)" />
+      <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="(roomname as string)" />
     </div>
 
   </div>
-  <div id="footer" class=" flex justify-end items-center bottom-0 w-full">
 
-  </div>
+
 </template>
 
 
 <script setup lang="ts">
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 import { Socket } from 'socket.io-client';
 import TabBattle from '../../components/tabBattle.vue'
 import type { DropdownMenuItem } from '@nuxt/ui';
@@ -63,7 +72,7 @@ import { mapEvent, type EventToDrawer, type Solve } from '~/types/solve.ts';
 const route = useRoute();
 const socket: Socket = useSocket();
 
-const roomName = ref<string | string[] | undefined>(route.params.id);
+const roomname = ref<string | string[] | undefined>(route.params.id);
 const roomPlayers = ref<Player[]>([]);
 const me = ref<Player>({ id: 'null', owner: false, pseudo: 'johndoe', state: 'READY' });
 const actualSolveId = ref<number>(1);
@@ -79,6 +88,7 @@ const audiosForInspection = ref<(string | HTMLAudioElement)[]>(['Rien', 'rien'])
 
 const inputMode = ref<'KEYBOARD' | 'MANUALLY'>('KEYBOARD');
 const drawer = ref<TwistyPlayer>();
+const showPage = ref<boolean>(false);
 
 const dropDownMenuEnabled = computed(() => roomPlayers.value.every((player) => player.state === 'READY'));
 const dropDownItems = computed((): DropdownMenuItem[][] => {
@@ -88,7 +98,7 @@ const dropDownItems = computed((): DropdownMenuItem[][] => {
     inputMode,
     audiosForInspection,
     socket,
-    roomName as Ref<string>,
+    roomname as Ref<string>,
     me,
     roomPlayers
   );
@@ -105,41 +115,50 @@ definePageMeta({
 });
 
 useHead({
-  title: 'KCB | Salle ' + roomName.value as string
+  title: 'KCB | Salle ' + roomname.value as string
 });
 
-//Instant ask at server
-socket.emit('i-want-room-data', roomName.value);
+
 
 //ALL LISTENERS SECTIONS
 
 onMounted(() => {
-  //response of socket.emit("i-want-room-data")
-  socket.on('send-all-room-data', (info: { players: Player[], scramble: string, event: string, actualSolveId: number, allSolves: Solve[] }) => {
-    roomPlayers.value = info.players;
-    scramble.value = info.scramble;
 
-    if (document.querySelector('twisty-player') === null) {
-      drawer.value = new TwistyPlayer();
+  socket.on('send-all-room-data', (info: { players: Player[], scramble: string, event: string, actualSolveId: number, allSolves: Solve[], error: boolean }) => {
 
-      drawer.value.puzzle = (mapEvent.get(info.event)!.toDrawer) as EventToDrawer;
-      drawer.value.alg = scramble.value;
-      drawer.value.visualization = '2D';
-      drawer.value.controlPanel = 'none';
-      drawer.value.background = 'none';
-      drawer.value.classList.add('scale-60', 'sm:scale-70', 'lg:scale-80', 'xl:scale-90', '2xl:scale-100');
-      const wrapper = document.getElementById('twisty-container')!;
-      wrapper.appendChild(drawer.value);
+    if (!info.error) {
+      showPage.value = true;
+      roomPlayers.value = info.players;
+      scramble.value = info.scramble;
+
+      if (document.querySelector('twisty-player') === null) {
+        drawer.value = new TwistyPlayer();
+
+        drawer.value.puzzle = (mapEvent.get(info.event)!.toDrawer) as EventToDrawer;
+        drawer.value.alg = scramble.value;
+        drawer.value.visualization = '2D';
+        drawer.value.controlPanel = 'none';
+        drawer.value.background = 'none';
+        drawer.value.classList.add('w-60', 'sm:w-70', 'lg:w-80', 'xl:w-90', '2xl:w-100', 'max-h-30', 'md:max-h-40', 'xl:max-h-60');
+        nextTick();
+        const wrapper = document.getElementById('twisty-container')!;
+        wrapper.appendChild(drawer.value);
+      }
+
+      if (roomPlayers.value.length > 0) {
+        me.value = roomPlayers.value[roomPlayers.value.length - 1]!;
+      }
+
+      //Scenario : i'm new player but the room already begin 
+      allSolves.value = info.allSolves.length !== 0 ? info.allSolves : [{ solveId: 0 }];
+      actualSolveId.value = info.actualSolveId;
+      puzzle.value = mapEvent.get(info.event)?.toDisplay ?? '';
+    } else {
+      //It's happend when a user comeback to page with next arrow navigation.
+      return navigateTo('/home?test');
     }
 
-    if (roomPlayers.value.length > 0) {
-      me.value = roomPlayers.value[roomPlayers.value.length - 1]!;
-    }
 
-    //Scenario : i'm new player but the room already begin 
-    allSolves.value = info.allSolves.length !== 0 ? info.allSolves : [{ solveId: 0 }];
-    actualSolveId.value = info.actualSolveId;
-    puzzle.value = mapEvent.get(info.event)?.toDisplay ?? '';
   });
 
   //new player just come / someone change his state
@@ -216,17 +235,18 @@ onMounted(() => {
     actualSolveId.value = 1;
   });
 
-
+  //emit on onMounted i-want-room-data to get data.
+  socket.emit('i-want-room-data');
 });
 
 const sendTime = (time: number, inspectionPenality: string, penalitySelected: string) => {
-  socket.emit('save-time', { roomName: roomName.value, time: time, inspectionPenality: inspectionPenality, penalitySelected: penalitySelected, solveId: actualSolveId.value });
+  socket.emit('save-time', { time: time, inspectionPenality: inspectionPenality, penalitySelected: penalitySelected, solveId: actualSolveId.value });
   localPlayerState.value = 'SCORED';
   scramble.value = 'Attente des autres joueurs...';
 };
 
 const leaveRoom = () => {
-  socket.emit("leave-room", roomName.value);
+  socket.emit("leave-room");
   return navigateTo("/home?return=yes");
 };
 

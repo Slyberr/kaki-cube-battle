@@ -1,73 +1,72 @@
-import { CorsOptions } from "cors";
-import { Server as Engine } from "engine.io";
-import { Server } from "socket.io";
-import { Penality, PlayerState, Room } from "../types/types";
-import { displayRoomsForHomePage } from "../utils/displayRoomsForHomePage";
-import { leaveRoom } from "../utils/leaveRoom";
-import { randomScrambleForEvent } from "cubing/scramble";
-import { saveTime } from "../utils/saveTime";
-import { isOwner } from "../utils/isOwner";
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
+import { CorsOptions } from 'cors';
+import { Server as Engine } from 'engine.io';
+import { Server } from 'socket.io';
+import { EventID, Penality, PlayerState, Room } from '../types/types';
+import { displayRoomsForHomePage } from '../utils/displayRoomsForHomePage';
+import { leaveRoom } from '../utils/leaveRoom';
+import { randomScrambleForEvent } from 'cubing/scramble';
+import { saveTime } from '../utils/saveTime';
+import { isOwner } from '../utils/isOwner';
 
 const corsOptions: CorsOptions = {
-  origin: "*",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   preflightContinue: false,
   optionsSuccessStatus: 204,
 };
 
-const rooms: Map<string, Room> = new Map();
+
+const rooms : Map<string,Room> = new Map();
 
 export default defineNitroPlugin((nitroApp) => {
+
   const engine = new Engine();
   const io: Server = new Server({ cors: corsOptions });
   io.bind(engine);
 
-  io.on("connection", (socket) => {
-    console.log("new user :", socket.id);
+  io.on('connection', (socket) => {
+    socket.data.roomname = '';
+    
+    console.log('new user :', socket.id);
 
-    //Instantly send rooms (name and nbr of player) for home.vue
-    socket.emit("get-rooms", displayRoomsForHomePage(rooms));
-
+    //app.vue on he onMounted emit('i-want-all-rooms')
+    socket.on('i-want-all-rooms', () => {
+      socket.emit('get-rooms', displayRoomsForHomePage(rooms));
+    })
+    
     //Player disconnected
-    socket.on("disconnect", () => {
-      //remove player from his room
-      let indexToRemove: number | null = null;
-      let roomName = "";
-      rooms.forEach((room, roomKey) => {
-        //a player have 0 or 1 room
-        room.players.some((value, index) => {
-          if (value.id === socket.id) {
-            indexToRemove = index;
-            roomName = roomKey;
-            return true;
-          } else {
-            return false;
-          }
-        });
-      });
-
-      if (indexToRemove !== null) {
-        leaveRoom(socket, roomName, rooms, io, true);
-        //Emit to EVERYONE rooms updated
-        io.emit("get-rooms", displayRoomsForHomePage(rooms));
+    socket.on('disconnect', () => {
+      if (socket.data.roomname !== '') {
+        const roomname = socket.data.roomname;
+        leaveRoom(socket, roomname, rooms, io, true);       
       }
 
-      console.log("Bye", socket.id);
+      console.log('Bye', socket.id);
     });
 
     //Create room
     socket.on(
-      "create-room",
+      'create-room',
       async (room: {
-        roomName: string;
+        roomname: string;
         isPrivate: boolean;
         password: string;
         pseudo: string;
       }) => {
-        if (!rooms.get(room.roomName)) {
-          //Create socket.io Room and a room
-          socket.join(room.roomName);
-          rooms.set(room.roomName, {
+        
+        if (socket.data.roomname === '' && !rooms.has(room.roomname)) {
+          //Create socket.io Room + rooms with data.
+          socket.join(room.roomname);
+          socket.data.roomname = room.roomname;
+
+          rooms.set(room.roomname, {
+            roomname: room.roomname,
             password: room.isPrivate ? room.password : undefined,
             isPrivate: room.isPrivate,
             players: [
@@ -75,224 +74,256 @@ export default defineNitroPlugin((nitroApp) => {
                 id: socket.id,
                 pseudo: room.pseudo,
                 owner: true,
-                state: "READY",
+                state: 'READY',
               },
             ],
             currentSolve: { solveId: -1 },
             allSolves: [],
             actualSolveId: 1,
-            nbrPlayers: 1,
-            event: "333",
-            actualScramble: (await randomScrambleForEvent("333")).toString(),
+            event: '333',
+            actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
-          socket.emit("go-to-room", room.roomName);
+          socket.emit('go-to-room', room.roomname);
+          console.log(room.pseudo + ' created new room : ' + room.roomname)
 
           //when a new player come (event for players already in room)
-          io.to(room.roomName).emit(
-            "players-updated",
-            rooms.get(room.roomName)?.players,
+          io.to(room.roomname).emit(
+            'players-updated',
+            rooms.get(room.roomname)?.players,
           );
 
           //Emit to EVERYONE rooms updated
-          io.emit("get-rooms", displayRoomsForHomePage(rooms));
+          io.emit('get-rooms', displayRoomsForHomePage(rooms));
         } else {
-          socket.emit("error", "Une room de ce nom existe déjà !");
+          socket.emit('error', 'Une room de ce nom existe déjà !');
         }
       },
     );
 
     //Join a room
     socket.on(
-      "join-room",
-      (info: { roomName: string; password: string; pseudo: string }) => {
-        const room = rooms.get(info.roomName);
-
-        if (room && room.isPrivate && room.password !== info.password) {
-          socket.emit("error", "mot de passe incorrect !");
-        } else if (
-          room &&
-          room.players.some((player) => player.pseudo === info.pseudo)
+      'join-room',
+      (info: { roomname: string; password: string; pseudo: string }) => {
+        if (
+          socket.data.roomname === '' &&
+          !rooms
+            .get(info.roomname)
+            ?.players.find((player) => player.id === socket.id)
         ) {
-          socket.emit("error", "Le pseudo est déjà pris !");
-        } else if (room) {
-          room.players.push({
-            id: socket.id,
-            pseudo: info.pseudo,
-            owner: false,
-            state: "READY",
-          });
+          const room = rooms.get(info.roomname);
 
-          socket.join(info.roomName);
-          room.nbrPlayers++;
-          rooms.set(info.roomName, room);
-          //redirect on room/[id].vue
-          socket.emit("go-to-room", info.roomName);
+          if (room && room.isPrivate && room.password !== info.password) {
+            socket.emit('error', 'mot de passe incorrect !');
+          } else if (
+            room &&
+            room.players.some((player) => player.pseudo === info.pseudo)
+          ) {
+            socket.emit('error', 'Le pseudo est déjà pris !');
+          } else if (room) {
+            room.players.push({
+              id: socket.id,
+              pseudo: info.pseudo,
+              owner: false,
+              state: 'READY',
+            });
 
-          //Emit to EVERYONE rooms updated
-          io.emit("get-rooms", displayRoomsForHomePage(rooms));
+            socket.join(room.roomname);
+            socket.data.roomname = room.roomname;
+            rooms.set(room.roomname, room);
+            //redirect on room/[id].vue
+            console.log(info.pseudo + 'join this room: ' + info.roomname)
+            socket.emit('go-to-room', room.roomname);
 
-          //when a new player come (event for players already in room)
-          io.to(info.roomName).emit("players-updated", room.players);
+            //Emit to EVERYONE rooms updated
+            io.emit('get-rooms', displayRoomsForHomePage(rooms));
+
+            //when a new player come (event for players already in room)
+            io.to(room.roomname).emit('players-updated', room.players);
+          }
+        } else {
+          //Strange comportment, it's can't be possible but purge the player.
+          leaveRoom(socket, info.roomname, rooms, io, false);
         }
       },
     );
 
-    //Send a message to the room
-    socket.on("send-message", (message: string, roomName: string) => {
-      const date = new Date();
-      const room = rooms.get(roomName);
-      if (room) {
-        const player = room.players.find((player) => player.id === socket.id);
-        if (player) {
-          io.to(roomName).emit("get-message", {
-            pseudo: player.pseudo,
-            data: message,
-            date: `${date.getHours()}:${date.getMinutes() > 9 ? date.getMinutes() : "0" + date.getMinutes()}.${date.getSeconds() > 9 ? date.getSeconds() : "0" + date.getSeconds()}`,
-          });
-        }
-      }
-    });
-
-    //Leave a room (only one room by player)
-    socket.on("leave-room", (roomName: string) => {
-      leaveRoom(socket, roomName, rooms, io, false);
-      //Emit to EVERYONE rooms updated
-      io.emit("get-rooms", displayRoomsForHomePage(rooms));
-    });
-
     //asked immediatly when playe entry on room/[id].vue
-    socket.on("i-want-room-data", (roomName) => {
-      const room = rooms.get(roomName);
-      if (room) {
+    socket.on('i-want-room-data', () => {
+      const roomname = socket.data.roomname;
+      if (roomname && rooms.has(roomname)) {
+        const room = rooms.get(roomname)!;
         //players, times...
-        socket.emit("send-all-room-data", {
+        socket.emit('send-all-room-data', {
           players: room.players,
           scramble: room.actualScramble,
           event: room.event,
           actualSolveId: room.actualSolveId,
           allSolves: room.allSolves,
+          error:false,
         });
+      } else {
+        socket.emit('send-all-room-data', {error:true})
+      }
+    });
+
+    //Leave a room (only one room by player)
+    socket.on('leave-room', () => {
+      const roomname = socket.data.roomname;
+      if (roomname) {
+        leaveRoom(socket, roomname, rooms, io, false);
       }
     });
 
     //When a player juste change his state (solving, inspecting...)
-    socket.on("change-state", (roomName: string, state: PlayerState) => {
-      const room = rooms.get(roomName);
+    socket.on('change-state', (state: PlayerState) => {
+      const roomname = socket.data.roomname;
 
-      if (room) {
+      if (roomname && rooms.has(roomname)) {
+        const room = rooms.get(roomname)!;
         const player = room.players.find((player) => player.id === socket.id);
         if (player) {
           player.state = state;
-          io.to(roomName).emit("players-updated", room.players);
-          rooms.set(roomName, room);
+          io.to(roomname).emit('players-updated', room.players);
+          rooms.set(roomname, room);
         }
       }
     });
 
     //When a player just submit his time
     socket.on(
-      "save-time",
+      'save-time',
       async (info: {
-        roomName: string;
         time: number;
         inspectionPenality: Penality;
         penalitySelected: Penality;
         solveId: number;
       }) => {
-        await saveTime(
-          info.roomName,
-          rooms,
-          io,
-          info.time,
-          info.inspectionPenality,
-          info.penalitySelected,
-          socket.id,
-          info.solveId,
-        );
+        const roomname = socket.data.roomname;
+        if (roomname && rooms.has(roomname)) {
+          await saveTime(
+            roomname,
+            rooms,
+            io,
+            info.time,
+            info.inspectionPenality,
+            info.penalitySelected,
+            socket.id,
+            info.solveId,
+          );
+        }
       },
     );
 
     //when event is updated
-    socket.on("update-event", async (event, roomName) => {
-      const room = rooms.get(roomName);
-      if (room && isOwner(socket.id, rooms, roomName)) {
+    socket.on('update-event', async (event: EventID) => {
+      const roomname = socket.data.roomname;
+
+      if (roomname && isOwner(socket.id, rooms, roomname)) {
+        const room = rooms.get(roomname)!;
         room.event = event;
         room.currentSolve = { solveId: -1 };
         room.allSolves = [];
         room.actualScramble = (await randomScrambleForEvent(event)).toString();
         room.actualSolveId = 1;
-        rooms.set(roomName, room);
-        io.to(roomName).emit("event-updated", {
+        rooms.set(roomname, room);
+        io.to(roomname).emit('event-updated', {
           event: room.event,
           scramble: room.actualScramble,
         });
-        io.emit("get-rooms", displayRoomsForHomePage(rooms));
+        io.emit('get-rooms', displayRoomsForHomePage(rooms));
       } else {
         socket.emit(
-          "error",
+          'error',
           "Vous n'avez pas les droits de faire cette action.",
         );
       }
     });
 
     //When owner clear session
-    socket.on("clear-session", (roomName) => {
-      const room = rooms.get(roomName);
-      if (room && isOwner(socket.id, rooms, roomName)) {
+    socket.on('clear-session', () => {
+      const roomname = socket.data.roomname;
+      if (roomname && isOwner(socket.id, rooms, roomname)) {
+        const room = rooms.get(roomname)!;
         room.currentSolve = { solveId: -1 };
         room.allSolves = [];
         room.actualSolveId = 1;
-        io.to(roomName).emit("session-cleaned");
+        io.to(roomname).emit('session-cleaned');
       } else {
         socket.emit(
-          "error",
+          'error',
           "Vous n'avez pas les droits de faire cette action.",
         );
       }
     });
 
     //When owner ckick someone
-    socket.on("kick-player", (roomName: string, playerToKickId: string) => {
-      const room = rooms.get(roomName);
-      if (room && isOwner(socket.id, rooms, roomName)) {
+    socket.on('kick-player', (playerToKickId: string) => {
+      const roomname = socket.data.roomname;
+      if (roomname && isOwner(socket.id, rooms, roomname)) {
         const kickPlayer = io.sockets.sockets.get(playerToKickId);
         //On va pas se kick soi-même quand même.
         if (kickPlayer && kickPlayer.id !== socket.id) {
-          kickPlayer.leave(roomName);
-          leaveRoom(kickPlayer, roomName, rooms, io, false);
+          kickPlayer.leave(roomname);
+          leaveRoom(kickPlayer, roomname, rooms, io, false);
           kickPlayer.emit(
-            "removed",
-            "Il a été décidé par le modérateur de vous exclure de la room " +
-              roomName +
-              ".",
+            'removed',
+            'Il a été décidé par le modérateur de vous exclure de la room ' +
+              roomname +
+              '.',
           );
 
-          io.emit("get-rooms", displayRoomsForHomePage(rooms));
+          io.emit('get-rooms', displayRoomsForHomePage(rooms));
         } else {
-          socket.emit("error", "Le joueur n'est pas présent dans cette room.");
+          socket.emit('error', "Le joueur n'est pas présent dans cette room.");
         }
-        console.log(kickPlayer);
       } else {
         socket.emit(
-          "error",
+          'error',
           "Vous n'avez pas les droits de faire cette action.",
         );
       }
     });
+
+    //Send a message to the room
+    socket.on('send-message', (message: string) => {
+      const date = new Date();
+      const roomname = socket.data.roomname;
+
+      if (roomname && rooms.has(roomname)) {
+        const room = rooms.get(roomname)!;
+        const player = room.players.find((player) => player.id === socket.id);
+        if (player) {
+          io.to(roomname).emit('get-message', {
+            pseudo: player.pseudo,
+            data: message,
+            date: `${date.getHours()}:${date.getMinutes() > 9 ? date.getMinutes() : '0' + date.getMinutes()}.${date.getSeconds() > 9 ? date.getSeconds() : '0' + date.getSeconds()}`,
+          });
+        }
+      }
+    });
   });
 
-  nitroApp.router.use('/socket.io/', defineEventHandler({
-    handler(event) {
-        engine.handleRequest(event.node.req,event.node.res);
+  nitroApp.router.use(
+    '/socket.io/',
+    defineEventHandler({
+      handler(event) {
+        engine.handleRequest(event.node.req, event.node.res);
         event._handled = true;
-    },
-    websocket: {
+      },
+      websocket: {
         open(peer) {
-        // @ts-expect-error 
-        engine.prepare(peer._internal.nodeReq)
-        // @ts-expect-error
-        engine.onWebSocket(peer._internal.nodeReq, peer._internal.nodeReq.socket, peer.websocket)
-        }
-    }
-  }))
+          // @ts-expect-error
+          engine.prepare(peer._internal.nodeReq);
+          // @ts-expect-error
+          engine.onWebSocket(
+            // @ts-expect-error
+            peer._internal.nodeReq,
+            // @ts-expect-error
+            peer._internal.nodeReq.socket,
+            peer.websocket,
+          );
+        },
+      },
+    }),
+  );
 });

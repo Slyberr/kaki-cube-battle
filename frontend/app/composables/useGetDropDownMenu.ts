@@ -1,3 +1,9 @@
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 import type { DropdownMenuItem } from '@nuxt/ui/runtime/components/DropdownMenu.vue.js';
 import type { Socket } from 'socket.io-client';
 import type { Player } from '~/types/player';
@@ -9,7 +15,7 @@ import type { Player } from '~/types/player';
  * @param inputMode
  * @param audioForInspection
  * @param socket
- * @param roomName
+ * @param roomname
  * @param me
  * @param roomPlayers
  * @returns
@@ -20,7 +26,7 @@ export const useGetDropDownMenu = (
   inputMode: Ref<'KEYBOARD' | 'MANUALLY'>,
   audioForInspection: Ref<(string| HTMLAudioElement)[]>,
   socket: Socket,
-  roomName: Ref<string>,
+  roomname: Ref<string>,
   me: Ref<Player>,
   roomPlayers: Ref<Player[]>,
 ): DropdownMenuItem[][] => {
@@ -30,7 +36,7 @@ export const useGetDropDownMenu = (
       playersToexpulseMenu.push({
         label: roomPlayers.value[i]?.pseudo,
         onSelect: () => {
-          socket.emit('kick-player', roomName.value, roomPlayers.value[i]?.id);
+          socket.emit('kick-player', roomname.value, roomPlayers.value[i]?.id);
         },
       });
     }
@@ -195,97 +201,97 @@ export const useGetDropDownMenu = (
             {
               label: '2x2',
               onSelect: () => {
-                socket.emit('update-event', '222', roomName.value);
+                socket.emit('update-event', '222');
               },
             },
             {
               label: '3x3',
               onSelect: () => {
-                socket.emit('update-event', '333', roomName.value);
+                socket.emit('update-event', '333');
               },
             },
             {
               label: '3x3oh',
               onSelect: () => {
-                socket.emit('update-event', '333oh', roomName.value);
+                socket.emit('update-event', '333oh');
               },
             },
             {
               label: '3x3bf',
               onSelect: () => {
-                socket.emit('update-event', '333bf', roomName.value);
+                socket.emit('update-event', '333bf');
               },
             },
             {
               label: '4x4',
               onSelect: () => {
-                socket.emit('update-event', '444', roomName.value);
+                socket.emit('update-event', '444');
               },
             },
             {
               label: '4x4bf',
               onSelect: () => {
-                socket.emit('update-event', '444bf', roomName.value);
+                socket.emit('update-event', '444bf');
               },
             },
             {
               label: '5x5',
               onSelect: () => {
-                socket.emit('update-event', '555', roomName.value);
+                socket.emit('update-event', '555');
               },
             },
             {
               label: '5x5bf',
               onSelect: () => {
-                socket.emit('update-event', '555bf', roomName.value);
+                socket.emit('update-event', '555bf');
               },
             },
             {
               label: '6x6',
               onSelect: () => {
-                socket.emit('update-event', '666', roomName.value);
+                socket.emit('update-event', '666');
               },
             },
             {
               label: '7x7',
               onSelect: () => {
-                socket.emit('update-event', '777', roomName.value);
+                socket.emit('update-event', '777');
               },
             },
             {
               label: 'Pyraminx',
               onSelect: () => {
-                socket.emit('update-event', 'pyram', roomName.value);
+                socket.emit('update-event', 'pyram');
               },
             },
             {
               label: 'Skewb',
               onSelect: () => {
-                socket.emit('update-event', 'skewb', roomName.value);
+                socket.emit('update-event', 'skewb');
               },
             },
             {
               label: 'Square-1',
               onSelect: () => {
-                socket.emit('update-event', 'sq1', roomName.value);
+                socket.emit('update-event', 'sq1');
               },
             },
             {
               label: 'Clock',
               onSelect: () => {
-                socket.emit('update-event', 'clock', roomName.value);
+                socket.emit('update-event', 'clock');
               },
             },
             {
               label: 'Megaminx',
               onSelect: () => {
-                socket.emit('update-event', 'minx', roomName.value);
+                socket.emit('update-event', 'minx');
               },
             },
             {
               label: 'FTO',
               onSelect: () => {
-                socket.emit('update-event', 'fto', roomName.value);
+                socket.emit('update-event', 'fto');
               },
             },
           ],
@@ -295,7 +301,7 @@ export const useGetDropDownMenu = (
         label: 'Réinitialiser la session',
         icon: 'lucide:brush-cleaning',
         onSelect: () => {
-          socket.emit('clear-session', roomName.value);
+          socket.emit('clear-session');
         },
       },
       {
