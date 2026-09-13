@@ -21,7 +21,7 @@ export default defineAppConfig({
     },
     tooltip: {
       slots: {
-        content: "h-20 justify-center text-sm",
+        content: "h-10 justify-center text-sm",
       },
     },
     modal: {

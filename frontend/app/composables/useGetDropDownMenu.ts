@@ -36,7 +36,7 @@ export const useGetDropDownMenu = (
       playersToexpulseMenu.push({
         label: roomPlayers.value[i]?.pseudo,
         onSelect: () => {
-          socket.emit('kick-player', roomname.value, roomPlayers.value[i]?.id);
+          socket.emit('kick-player', roomPlayers.value[i]?.id);
         },
       });
     }
