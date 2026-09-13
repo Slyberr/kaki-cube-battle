@@ -1,6 +1,6 @@
 <template>
   <div
-     id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[30%]" :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none' ">
+     id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[40%] xl:w-[35%] 2xl:w-[30%]" :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none' ">
 
 
     <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
@@ -357,7 +357,7 @@ const beginInspection = () => {
 
 const saveTime = () => {
   if (props.inputMode === 'KEYBOARD') {
-    buttonLabel.value = 'En attente des autres joueurs';
+    buttonLabel.value = "Tout le monde n'a pas terminé...";
     timer.state = 'WAITING_OTHER';
 
     inspectionValue.value = 15;
