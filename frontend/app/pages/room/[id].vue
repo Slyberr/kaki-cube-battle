@@ -119,7 +119,7 @@ definePageMeta({
 });
 
 useHead({
-  title: 'KCB | Salle ' + roomname.value as string
+  title: 'Kaki Cube | ' + roomname.value as string
 });
 
 
