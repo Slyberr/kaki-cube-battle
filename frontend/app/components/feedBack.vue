@@ -40,7 +40,7 @@
                 :items="items" 
                 required></USelect>
             </UFormField>
-            <UButton type="submit" class="flex w-30 my-4" :label="buttonSend.text" :loading="buttonSend.loading"/>
+            <UButton type="submit" class="flex w-24 my-4 justify-center" :label="buttonSend.text" :loading="buttonSend.loading"/>
         </UForm>
     </div>
 
@@ -84,7 +84,7 @@ const sendMail = async() => {
         formData.pseudo = '';
         formData.mail = '';
         formData.text = '';
-        formData.type = '';
+        formData.type = 'Bug';
         buttonSend.text = 'Envoyer';
         buttonSend.loading = false;
         waiting.value = false;
