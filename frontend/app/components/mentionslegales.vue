@@ -72,7 +72,7 @@
       <br />
       <p class="text-lg">2/ Contacts </p>
       <p class="text-sm">
-         Voici la liste des contacts gravitant autour de <i>Kaki Battle Cuber</i> : </p>
+         Voici la liste des contacts gravitant autour de <i>Kaki Cuber</i> : </p>
       <br />
       <ul class="text-xs">
          <li> Railway

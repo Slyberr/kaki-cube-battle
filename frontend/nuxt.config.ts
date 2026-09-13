@@ -17,7 +17,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: "Kaki Battle Cuber",
+      title: "Kaki Cube VS",
       link: [{ rel: "icon", type: "image/svg+xml", href: "/kbc.svg" }],
     },
   },
