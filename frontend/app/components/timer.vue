@@ -128,9 +128,7 @@ onMounted(() => {
 
 //UTILS don't want to make a utils/UseKeyXSpaceManager beacause lot of variables to send.
 const keyDownSpaceManager = (event: KeyboardEvent) => {
-  if (event.code === 'Space') {
     timerDownManager(event);
-  }
 };
 
 const keyUpSpaceManager = (event: KeyboardEvent) => {
@@ -153,8 +151,8 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
       return;
     }
   }
-  //KeyBoard mode 
-  if (props.inputMode === 'KEYBOARD') {
+  //KeyBoard mode accept only touch + spacebar on pc.
+  if (props.inputMode === 'KEYBOARD' && (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))) {
 
     switch (timer.state) {
       case 'BEGIN_STATE':
@@ -177,7 +175,7 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
     }
   }
 
-  //TIMER CAN BE STOPPED BY ANY KEY !
+  //Timer can be stopped by any key.
   if (timer.state === 'RUNNING' && props.inputMode === 'KEYBOARD') {
     clearInterval(timerIntervalId.value);
     //Save a initial 'toHuman' state before modifie timeDisplayed with the penalities.
