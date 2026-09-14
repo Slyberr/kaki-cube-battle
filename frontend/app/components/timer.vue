@@ -13,8 +13,8 @@
       <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[400px]:flex-col max-[400px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
-          :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card" indicator="hidden"
-          orientation="horizontal">
+          :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
+          indicator="hidden" orientation="horizontal">
         </URadioGroup>
         <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :disabled="!onConfirmTouchUp"
           :label="buttonLabel" @click="saveTime" />
@@ -120,8 +120,8 @@ const toast = useToast();
 const emits = defineEmits(['playerChangeState', 'time-sended']);
 
 onMounted(() => {
-  window.addEventListener('keydown', keyDownSpaceManager);
-  window.addEventListener('keyup', keyUpSpaceManager);
+  window.addEventListener('keydown', timerDownManager);
+  window.addEventListener('keyup', timerUpManager);
   window.addEventListener('keydown', onKeyDownEnter);
   //For mobile and tablets.
   document.getElementById('timer')!.addEventListener('touchend', timerUpManager);
@@ -130,15 +130,6 @@ onMounted(() => {
 });
 
 //UTILS don't want to make a utils/UseKeyXSpaceManager beacause lot of variables to send.
-const keyDownSpaceManager = (event: KeyboardEvent) => {
-  timerDownManager(event);
-};
-
-const keyUpSpaceManager = (event: KeyboardEvent) => {
-  if (event.code === 'Space') {
-    timerUpManager(event);
-  }
-};
 
 const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
 
@@ -154,7 +145,7 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
       return;
     }
   }
-  //KeyBoard mode accept only touch + spacebar on pc.
+  //Keyboard mode accept only touch + spacebar on pc.
   if (props.inputMode === 'KEYBOARD' && (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))) {
 
     switch (timer.state) {
@@ -207,7 +198,10 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
     return;
   }
 
-  if (props.inputMode === 'KEYBOARD') {
+  //Keyboard mode accept only touch + spacebar on pc.
+  if (props.inputMode === 'KEYBOARD' &&
+    (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))
+  ) {
     switch (timer.state) {
       case 'BEGIN_STATE':
         //not depending to holding time value.
@@ -250,18 +244,25 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
 
         break;
       case 'RUNNING':
-      case 'CONFIRM':
-        //User touch up screen so is safe to unlock button after 0.5s.
-        if (!onConfirmTouchUp.value) {
-         setTimeout(() => {
-            onConfirmTouchUp.value = true;
-          }, 300);
-        }
-        break
     }
   }
 
-  if (props.inputMode === 'MANUALLY') {
+  //Timer can be stopped by any key.
+  if (timer.state === 'CONFIRM' && props.inputMode === 'KEYBOARD') {
+
+    //User touch up screen so is safe to unlock button after 0.3s.
+    if (!onConfirmTouchUp.value) {
+      setTimeout(() => {
+        onConfirmTouchUp.value = true;
+      }, 300);
+    }
+
+  }
+
+
+  if (props.inputMode === 'MANUALLY' &&
+    (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))
+  ) {
     switch (timer.state) {
       case 'BEGIN_STATE':
         if (props.activeInspection) {
@@ -297,7 +298,7 @@ const onKeyDownEnter = (event: KeyboardEvent) => {
   }
 };
 
-const handlecontextMenu = (e : Event) => e.preventDefault();
+const handlecontextMenu = (e: Event) => e.preventDefault();
 
 /**
  * code to create Inspection with penalities (+2 and DNF) or not if manual.
@@ -466,8 +467,8 @@ onBeforeUnmount(() => {
   clearInterval(inspectionId.value);
   clearInterval(holdingSpaceId.value);
   clearInterval(timerIntervalId.value);
-  window.removeEventListener('keyup', keyUpSpaceManager);
-  window.removeEventListener('keydown', keyDownSpaceManager);
+  window.removeEventListener('keyup', timerUpManager);
+  window.removeEventListener('keydown', timerDownManager);
   window.removeEventListener('keydown', onKeyDownEnter);
   document.getElementById('timer')!.removeEventListener('touchend', timerUpManager);
   document.getElementById('timer')!.removeEventListener('touchstart', timerDownManager);
