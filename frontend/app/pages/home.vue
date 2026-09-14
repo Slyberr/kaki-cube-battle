@@ -2,7 +2,7 @@
 
   <UPageHero title="Bienvenue sur Kaki Cube VS !"
     description="Projet open-source qui permet de créer une salle instantanément et sans compte ! Créez des salles privées ou publiques et affrontez vos amis sur toutes les épreuves WCA."
-    headline="version 1.0">
+    headline="version 1.01">
 
     <!--- Créer une room-->
 
