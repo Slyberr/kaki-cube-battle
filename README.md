@@ -11,3 +11,20 @@ Le principal avantage est que l'utilisation du site ne nécessite aucun compte p
 
 ###### Nuxt.js propose de combiner facilement les deux en un : j'ai finalement tout rassemblé dans frontend/.
 ###### Migrer les fichiers hors du dossier frontend/ ferrait perdre l'historique de tous les fichiers.
+
+
+
+#### Mise au clair au sujet de l’utilisation de l'intelligence artificielle sur le projet.
+
+
+##### l'IA générative a été utilisée uniquement pour : 
+
+###### - Trouver plus facilement de la documentation et l'appliquer dans le code.
+
+###### - Comme aide pour trouver certains bugs coriaces de performance ou d’hydratation ou pour mettre en place correctement le nom de domaine le DNS et la config de hébergeur.
+
+###### - Générer le CODE du SVG de l’icône qui sert d'emblème au site, sachant qu'il a été sensiblement modifié pour s'adapter à mes envies.
+
+
+
+
