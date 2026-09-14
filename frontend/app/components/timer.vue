@@ -1,22 +1,23 @@
 <template>
-  <div
-     id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[40%] xl:w-[35%] 2xl:w-[30%]" :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none' ">
+  <div id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[40%] xl:w-[35%] 2xl:w-[30%]"
+    :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none'">
 
 
     <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
 
 
-      <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>{{
-        timer.timeDisplayed }}</div>
+      <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
+        {{
+          timer.timeDisplayed }}</div>
 
       <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[400px]:flex-col max-[400px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
-          :disabled="inspectionPenality === 'DNF' || timer.state === 'WAITING_OTHER'" variant="card" indicator="hidden"
+          :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card" indicator="hidden"
           orientation="horizontal">
         </URadioGroup>
-        <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel"
-          @click="saveTime" />
+        <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :disabled="!onConfirmTouchUp"
+          :label="buttonLabel" @click="saveTime" />
       </div>
     </div>
     <!--if manual mod-->
@@ -112,6 +113,8 @@ const buttonLabel = ref<string>('Confirmer');
 const inspectionValue = ref<number>(15);
 const inspectionPenality = ref<Penality>('NONE');
 
+const onConfirmTouchUp = ref<boolean>(false);
+
 const toast = useToast();
 
 const emits = defineEmits(['playerChangeState', 'time-sended']);
@@ -128,7 +131,7 @@ onMounted(() => {
 
 //UTILS don't want to make a utils/UseKeyXSpaceManager beacause lot of variables to send.
 const keyDownSpaceManager = (event: KeyboardEvent) => {
-    timerDownManager(event);
+  timerDownManager(event);
 };
 
 const keyUpSpaceManager = (event: KeyboardEvent) => {
@@ -248,6 +251,12 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
         break;
       case 'RUNNING':
       case 'CONFIRM':
+        //User touch up screen so is safe to unlock button after 0.5s.
+        if (!onConfirmTouchUp.value) {
+         setTimeout(() => {
+            onConfirmTouchUp.value = true;
+          }, 300);
+        }
         break
     }
   }
@@ -355,6 +364,7 @@ const beginInspection = () => {
 
 const saveTime = () => {
   if (props.inputMode === 'KEYBOARD') {
+    onConfirmTouchUp.value = false;
     buttonLabel.value = "En attente des joueurs";
     timer.state = 'WAITING_OTHER';
 
@@ -461,7 +471,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDownEnter);
   document.getElementById('timer')!.removeEventListener('touchend', timerUpManager);
   document.getElementById('timer')!.removeEventListener('touchstart', timerDownManager);
-  document.getElementById('timer')!.removeEventListener('contextmenu',handlecontextMenu );
+  document.getElementById('timer')!.removeEventListener('contextmenu', handlecontextMenu);
 });
 
 </script>
