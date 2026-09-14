@@ -1,4 +1,5 @@
 <template>
+    <p class="text-sm px-8">Si vous avez un discord, vous pouvez aussi faire un retour en rejoignant le serveur dédié.</p>
     <div class="flex flex-col w-full h-full justify-center items-center" @submit="sendMail">
         <UForm  class="flex flex-col  w-full h-[50%]  mx-4 p-8 gap-2 ">
             <UFormField  label="Votre Pseudo (optionnel)">

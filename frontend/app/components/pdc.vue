@@ -1,5 +1,5 @@
 <template>
-    <p class="">La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 13 sept
+    <p >La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 13 sept
         2026).</p>
     <div class="text-muted">
         <div class="text-lg">1/ Motivation sur la vie privée et les données </div>

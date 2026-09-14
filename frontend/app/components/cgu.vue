@@ -1,5 +1,5 @@
 <template>
-    <p class="">Les CGU pourraient évoluer, veuillez les lire attentivement.(Dernière maj : 13 sept 2026)</p>
+    <p>Les CGU pourraient évoluer, veuillez les lire attentivement.(Dernière maj : 13 sept 2026)</p>
     <div class="text-muted">
         
         <p class="text-lg">1/ Objectif de Kaki Cube VS</p>

@@ -1,22 +1,23 @@
 <template>
-  <div
-     id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[40%] xl:w-[35%] 2xl:w-[30%]" :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none' ">
+  <div id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[40%] xl:w-[35%] 2xl:w-[30%]"
+    :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none'">
 
 
     <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
 
 
-      <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>{{
-        timer.timeDisplayed }}</div>
+      <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
+        {{
+          timer.timeDisplayed }}</div>
 
-      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[250px]:flex-col"
+      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[400px]:flex-col max-[400px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
-          :disabled="inspectionPenality === 'DNF' || timer.state === 'WAITING_OTHER'" variant="card" indicator="hidden"
-          orientation="horizontal">
+          :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
+          indicator="hidden" orientation="horizontal">
         </URadioGroup>
-        <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel"
-          @click="saveTime" />
+        <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :disabled="!onConfirmTouchUp"
+          :label="buttonLabel" @click="saveTime" />
       </div>
     </div>
     <!--if manual mod-->
@@ -31,7 +32,7 @@
       </template>
       <template v-else>
         <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center" @submit="saveTime">
-          <UFormField class="">
+          <UFormField>
             <UInput v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
               maxlength="6" :disabled="manualTime.disabled" />
           </UFormField>
@@ -112,13 +113,15 @@ const buttonLabel = ref<string>('Confirmer');
 const inspectionValue = ref<number>(15);
 const inspectionPenality = ref<Penality>('NONE');
 
+const onConfirmTouchUp = ref<boolean>(false);
+
 const toast = useToast();
 
 const emits = defineEmits(['playerChangeState', 'time-sended']);
 
 onMounted(() => {
-  window.addEventListener('keydown', keyDownSpaceManager);
-  window.addEventListener('keyup', keyUpSpaceManager);
+  window.addEventListener('keydown', timerDownManager);
+  window.addEventListener('keyup', timerUpManager);
   window.addEventListener('keydown', onKeyDownEnter);
   //For mobile and tablets.
   document.getElementById('timer')!.addEventListener('touchend', timerUpManager);
@@ -127,17 +130,6 @@ onMounted(() => {
 });
 
 //UTILS don't want to make a utils/UseKeyXSpaceManager beacause lot of variables to send.
-const keyDownSpaceManager = (event: KeyboardEvent) => {
-  if (event.code === 'Space') {
-    timerDownManager(event);
-  }
-};
-
-const keyUpSpaceManager = (event: KeyboardEvent) => {
-  if (event.code === 'Space') {
-    timerUpManager(event);
-  }
-};
 
 const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
 
@@ -153,8 +145,8 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
       return;
     }
   }
-  //KeyBoard mode 
-  if (props.inputMode === 'KEYBOARD') {
+  //Keyboard mode accept only touch + spacebar on pc.
+  if (props.inputMode === 'KEYBOARD' && (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))) {
 
     switch (timer.state) {
       case 'BEGIN_STATE':
@@ -177,7 +169,7 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
     }
   }
 
-  //TIMER CAN BE STOPPED BY ANY KEY !
+  //Timer can be stopped by any key.
   if (timer.state === 'RUNNING' && props.inputMode === 'KEYBOARD') {
     clearInterval(timerIntervalId.value);
     //Save a initial 'toHuman' state before modifie timeDisplayed with the penalities.
@@ -206,7 +198,10 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
     return;
   }
 
-  if (props.inputMode === 'KEYBOARD') {
+  //Keyboard mode accept only touch + spacebar on pc.
+  if (props.inputMode === 'KEYBOARD' &&
+    (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))
+  ) {
     switch (timer.state) {
       case 'BEGIN_STATE':
         //not depending to holding time value.
@@ -249,12 +244,25 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
 
         break;
       case 'RUNNING':
-      case 'CONFIRM':
-        break
     }
   }
 
-  if (props.inputMode === 'MANUALLY') {
+  //Timer can be stopped by any key.
+  if (timer.state === 'CONFIRM' && props.inputMode === 'KEYBOARD') {
+
+    //User touch up screen so is safe to unlock button after 0.3s.
+    if (!onConfirmTouchUp.value) {
+      setTimeout(() => {
+        onConfirmTouchUp.value = true;
+      }, 300);
+    }
+
+  }
+
+
+  if (props.inputMode === 'MANUALLY' &&
+    (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))
+  ) {
     switch (timer.state) {
       case 'BEGIN_STATE':
         if (props.activeInspection) {
@@ -290,7 +298,7 @@ const onKeyDownEnter = (event: KeyboardEvent) => {
   }
 };
 
-const handlecontextMenu = (e : Event) => e.preventDefault();
+const handlecontextMenu = (e: Event) => e.preventDefault();
 
 /**
  * code to create Inspection with penalities (+2 and DNF) or not if manual.
@@ -357,7 +365,8 @@ const beginInspection = () => {
 
 const saveTime = () => {
   if (props.inputMode === 'KEYBOARD') {
-    buttonLabel.value = "Des joueurs terminent...";
+    onConfirmTouchUp.value = false;
+    buttonLabel.value = "En attente des joueurs";
     timer.state = 'WAITING_OTHER';
 
     inspectionValue.value = 15;
@@ -458,12 +467,12 @@ onBeforeUnmount(() => {
   clearInterval(inspectionId.value);
   clearInterval(holdingSpaceId.value);
   clearInterval(timerIntervalId.value);
-  window.removeEventListener('keyup', keyUpSpaceManager);
-  window.removeEventListener('keydown', keyDownSpaceManager);
+  window.removeEventListener('keyup', timerUpManager);
+  window.removeEventListener('keydown', timerDownManager);
   window.removeEventListener('keydown', onKeyDownEnter);
   document.getElementById('timer')!.removeEventListener('touchend', timerUpManager);
   document.getElementById('timer')!.removeEventListener('touchstart', timerDownManager);
-  document.getElementById('timer')!.removeEventListener('contextmenu',handlecontextMenu );
+  document.getElementById('timer')!.removeEventListener('contextmenu', handlecontextMenu);
 });
 
 </script>

@@ -3,9 +3,9 @@
   <UModal>
     <UButton color="primary" variant="ghost" label="Retour" icon="lucide:arrow-left" />
     <template #content="{ close }">
-      <div class="flex flex-col p-8 w-full gap-10 items-center justify-between">
+      <div class="flex flex-col p-8  gap-10 items-center justify-between">
         <p>En quittant la room, vous serez indirectement éjectée et vos scores seront supprimés. Partir ? </p>
-        <div class="flex justify-between w-[50%]">
+        <div class="flex justify-between  w-[80%] sm:w-[50%]">
           <UButton class="w-20" label="Oui" @click="leaveRoom()" icon="lucide:check" />
           <UButton class="w-20" label="Non" @click="close" icon="lucide:x" />
         </div>
