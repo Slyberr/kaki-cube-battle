@@ -15,7 +15,7 @@
     "@nuxt/ui": "^4.9.0",
     "@vueuse/core": "^14.4.0",
     "cors": "^2.8.6",
-    "cubing": "^0.63.3",
+    "cubing": "^0.63.4",
     "engine.io": "^6.6.10",
     "nitropack": "^2.13.4",
     "nodemailer": "^10.0.1",

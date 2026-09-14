@@ -67,10 +67,10 @@
 
       <template #right>
         <div class="flex gap-3">
-        <NuxtLink to="https://discord.gg/B7tpmhWyV">
-          <NuxtImg  src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/discord-white-icon.png" width="20"></NuxtImg>
+        <NuxtLink to="https://discord.gg/B7tpmhWyV" target="_blank"">
+          <NuxtImg  src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/discord-white-icon.png"  width="20"></NuxtImg>
         </NuxtLink>
-         <NuxtLink to="https://github.com/Slyberr/kaki-cube-battle">
+         <NuxtLink to="https://github.com/Slyberr/kaki-cube-battle" target="_blank">
           <NuxtImg  src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/github-white-icon.png" width="20"></NuxtImg>
         </NuxtLink>
 
