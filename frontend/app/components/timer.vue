@@ -9,7 +9,7 @@
       <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>{{
         timer.timeDisplayed }}</div>
 
-      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[250px]:flex-col"
+      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[400px]:flex-col max-[400px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
           :disabled="inspectionPenality === 'DNF' || timer.state === 'WAITING_OTHER'" variant="card" indicator="hidden"
@@ -31,7 +31,7 @@
       </template>
       <template v-else>
         <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center" @submit="saveTime">
-          <UFormField class="">
+          <UFormField>
             <UInput v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
               maxlength="6" :disabled="manualTime.disabled" />
           </UFormField>
@@ -355,7 +355,7 @@ const beginInspection = () => {
 
 const saveTime = () => {
   if (props.inputMode === 'KEYBOARD') {
-    buttonLabel.value = "Des joueurs terminent...";
+    buttonLabel.value = "En attente des joueurs";
     timer.state = 'WAITING_OTHER';
 
     inspectionValue.value = 15;

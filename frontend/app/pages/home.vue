@@ -9,7 +9,7 @@
 
     <UModal title="Créer une salle">
       <div class="flex justify-center">
-        <UButton class="" icon="lucide:plus" label="Créer une nouvelle room" />
+        <UButton icon="lucide:plus" label="Créer une nouvelle room" />
       </div>
       <template #body>
         <div class="text-sm" :class="windowWidth < 1000 ? 'flex' : 'hidden'">Pour les appareils mobiles et tablette, Kaki
@@ -21,13 +21,13 @@
           <UFormField class="h-20" label="Votre pseudo" name="pseudo">
             <UInput type="input" v-model="state.pseudo"></UInput>
           </UFormField>
-          <div class="flex mb-10">
+          <div class="flex mb-10 gap-12">
             <UFormField label="Privée ?" name="prive">
               <UCheckbox v-model="state.isPrivate"></UCheckbox>
             </UFormField>
 
-            <div v-show="state.isPrivate">
-              <UFormField class="absolute right-10" label="Mot de passe" name="password">
+            <div v-show="state.isPrivate" class="flex">
+              <UFormField class="absolute sm:right-10" label="Mot de passe" name="password">
                 <UInput type="password" v-model="state.password"></UInput>
               </UFormField>
             </div>
@@ -130,7 +130,7 @@ const schemaJoin = computed(() => v.object({
 
 const btnLoading = ref<boolean>(false);
 const windowWidth = useWindowSize().width.value;
-console.log(windowWidth)
+
 
 const socket = useSocket();
 

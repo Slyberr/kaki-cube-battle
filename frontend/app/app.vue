@@ -43,21 +43,21 @@
         <USeparator></USeparator>
       </template>
       <template #default>
-      <UModal title="CGU">
+      <UModal title="CGU" :ui="{content : 'max-w-5xl'}">
         <UButton variant="ghost" class="text-muted" label="CGU"></UButton>
         <template #body>
           <Cgu />
         </template>
       </UModal>
 
-      <UModal title="Politique de confidentialité">
+      <UModal title="Politique de confidentialité" :ui="{content : 'max-w-5xl'}">
         <UButton variant="ghost" class="text-muted" label="Politique de confidentialité"></UButton>
         <template #body>
           <Pdc />
         </template>
       </UModal>
 
-      <UModal title="Mentions légales">
+      <UModal title="Mentions légales" :ui="{content : 'max-w-5xl'}">
         <UButton variant="ghost" class="text-muted" label="Mentions légales"></UButton>
         <template #body>
           <Mentionslegales />
@@ -67,7 +67,7 @@
 
       <template #right>
         <div class="flex gap-3">
-        <NuxtLink to="https://discord.gg/B7tpmhWyV" target="_blank"">
+        <NuxtLink to="https://discord.gg/B7tpmhWyV" target="_blank">
           <NuxtImg  src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/discord-white-icon.png"  width="20"></NuxtImg>
         </NuxtLink>
          <NuxtLink to="https://github.com/Slyberr/kaki-cube-battle" target="_blank">

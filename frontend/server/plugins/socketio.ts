@@ -59,7 +59,7 @@ export default defineNitroPlugin((nitroApp) => {
         password: string;
         pseudo: string;
       }) => {
-        
+      
         if (socket.data.roomname === '' && !rooms.has(room.roomname)) {
           //Create socket.io Room + rooms with data.
           socket.join(room.roomname);
@@ -95,7 +95,12 @@ export default defineNitroPlugin((nitroApp) => {
           //Emit to EVERYONE rooms updated
           io.emit('get-rooms', displayRoomsForHomePage(rooms));
         } else {
-          socket.emit('error', 'Une room de ce nom existe déjà !');
+          if(socket.data.roomname !== '') {
+            socket.emit('error', 'Impossible de créer la salle car vous êtes dans une autre salle. Rechargez la page.');
+          } else {
+             socket.emit('error', 'Une salle de ce nom existe déjà !.');
+          }
+          
           socket.emit('go-to-room', {ok : false, roomname : ''});
         }
       },
@@ -134,7 +139,7 @@ export default defineNitroPlugin((nitroApp) => {
             socket.data.roomname = room.roomname;
             rooms.set(room.roomname, room);
             //redirect on room/[id].vue
-            console.log(info.pseudo + 'join this room: ' + info.roomname)
+            console.log(info.pseudo + ' join this room: ' + info.roomname)
             socket.emit('go-to-room', {ok : true, roomname : room.roomname});
 
             //Emit to EVERYONE rooms updated

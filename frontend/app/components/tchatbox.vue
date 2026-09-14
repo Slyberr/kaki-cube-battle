@@ -40,7 +40,7 @@
          </p>
 
       </div>
-      <UForm class="flex mt-4 gap-4 w-full" @submit='sendMessage()''>
+      <UForm class="flex mt-4 gap-4 w-full" @submit="sendMessage()">
          <UFormField class="w-full">
          <UInput class="flex grow-2" v-model="inputModel" />
          </UFormField>

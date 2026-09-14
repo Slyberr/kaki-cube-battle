@@ -28,7 +28,7 @@ export default defineAppConfig({
       variants: {
         fullscreen: {
           false: {
-            content: "max-w-4xl min-w-110",
+            content: "max-w-2xl",
           },
         },
       },
