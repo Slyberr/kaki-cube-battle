@@ -68,8 +68,8 @@ import { Socket } from 'socket.io-client';
 import TabBattle from '../../components/tabBattle.vue'
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { TwistyPlayer } from 'cubing/twisty';
-import { type Player, type PlayerState } from '~/types/player.ts';
-import { mapEvent, type EventToDrawer, type Solve } from '~/types/solve.ts';
+import { type Player, type PlayerState } from '~~/shared/types/player.ts';
+import { mapEvent, type EventToDrawer, type Solve } from '~~/shared/types/solve.ts';
 
 const route = useRoute();
 const socket: Socket = useSocket();

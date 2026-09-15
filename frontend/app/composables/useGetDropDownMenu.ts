@@ -6,7 +6,7 @@
 
 import type { DropdownMenuItem } from '@nuxt/ui/runtime/components/DropdownMenu.vue.js';
 import type { Socket } from 'socket.io-client';
-import type { Player } from '~/types/player';
+import type { Player } from '~~/shared/types/player';
 
 /**
  * Give the dropdownMenu option

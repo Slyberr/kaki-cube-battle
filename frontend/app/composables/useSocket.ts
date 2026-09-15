@@ -5,12 +5,25 @@
  */
 
 import { io, Socket } from 'socket.io-client';
+import { isValid } from '~/utils/isValid';
 
 let socket : Socket | null = null;
 
 export const useSocket = () => {
   if (!socket) {
-    socket = io();
+    const date = Date.now();
+    const sessionid = crypto.randomUUID();
+
+    const storageID  : string | null = localStorage.getItem('keep-session');
+    const storageDate : string | null = localStorage.getItem('date');
+    
+    if (storageID === null || (storageDate !== null && !isValid(parseInt(storageDate),2)) ) {
+      localStorage.setItem('keep-session',sessionid);
+    } 
+    //refresh or create a date
+    localStorage.setItem('date',date.toString());
+    
+    socket = io( {auth : {sessionid}});
   }
   return socket;
 };

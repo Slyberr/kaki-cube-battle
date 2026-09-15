@@ -59,7 +59,7 @@
 
 import { Socket } from 'socket.io-client';
 import type { Message } from '~/types/chat';
-import type { Player } from '~/types/player';
+import type { Player } from '~~/shared/types/player';
 
 const props = defineProps<{ me: Player, socket: Socket, roomname: string }>();
 const conv = ref<Message[]>([]);

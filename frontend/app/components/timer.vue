@@ -55,8 +55,8 @@
 
 import type { RadioGroupItem } from '@nuxt/ui';
 
-import type { PlayerState } from '~/types/player';
-import type { Penality } from '~/types/solve';
+import type { PlayerState } from '~~/shared/types/player';
+import type { Penality } from '~~/shared/types/solve';
 
 const props = defineProps<{
   localPlayerState: PlayerState,

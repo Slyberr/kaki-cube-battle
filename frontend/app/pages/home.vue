@@ -101,7 +101,7 @@
 
 import { useWindowSize } from '@vueuse/core';
 import * as v from 'valibot';
-import { mapEvent, type EventID } from '~/types/solve';
+import { mapEvent, type EventID } from '~~/shared/types/solve';
 
 const rooms = useState<{ roomname: string, isPrivate: boolean, currentEvent: EventID; length: number }[]>('rooms');
 

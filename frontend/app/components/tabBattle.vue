@@ -13,8 +13,8 @@
 
 import { timeForHuman } from '#imports';
 import type { TableColumn, TableRow } from '@nuxt/ui'
-import type { Player, PlayerState } from '~/types/player';
-import type { Solve } from '~/types/solve';
+import type { Player, PlayerState } from '~~/shared/types/player';
+import type { Solve } from '~~/shared/types/solve';
 
 
 const props = defineProps<{ players: Player[], times: Solve[], solveId: number, me: Player }>()
