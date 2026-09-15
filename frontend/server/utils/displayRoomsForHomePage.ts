@@ -4,14 +4,15 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import { EventID, Room } from '../types/types.js';
+import { ServerRoom } from "../type";
+
 
 /**
  * update some useful infos to home.vue in order to have actual states of rooms (roomname, nbr players...)
  * @param rooms 
  * @returns 
  */
-export const displayRoomsForHomePage = (rooms : Map<string,Room>) : { roomname: string;isPrivate : boolean;currentEvent: EventID, length: number }[] =>   {
+export const displayRoomsForHomePage = (rooms : Map<string,ServerRoom>) : { roomname: string;isPrivate : boolean;currentEvent: EventID, length: number }[] =>   {
   let res: { roomname: string;isPrivate : boolean;currentEvent: EventID, length: number }[] = [];
 
   rooms.forEach((room, _) => {

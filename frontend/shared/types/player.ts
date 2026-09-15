@@ -5,10 +5,12 @@ export type PlayerState =
 | 'CONFIRMATION' 
 | 'SCORED';
 
-export type Player = {
-  id: string;
+export type ClientPlayer = {
+  socketId: string;
   pseudo: string;
   owner: boolean;
   state: PlayerState;
-};
+}
+
+
 

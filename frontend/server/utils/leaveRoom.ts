@@ -4,9 +4,9 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import { Server } from 'socket.io';
-import { Player, Room } from '../types/types.js';
+import { Server, Socket } from 'socket.io';
 import { everyoneScored } from './everyoneScored.js';
+import { ServerPlayer, ServerRoom } from '../type.js';
 
 /**
  * Buisness logic when a user leave a room (return button or disconnect or navgation arrow )
@@ -17,9 +17,9 @@ import { everyoneScored } from './everyoneScored.js';
  * @param disconnected True if he leave or reload the page. False if he just leave the room.
  */
 export const leaveRoom = (
-  mySocket: any,
+  mySocket: Socket,
   roomname: string,
-  rooms: Map<string, Room>,
+  rooms: Map<string, ServerRoom>,
   io: Server,
   disconnected: boolean,
 ) => {
@@ -35,8 +35,8 @@ export const leaveRoom = (
   if (roomToManage) {
     let wasOwner = false;
 
-    const roomNoLeaver = roomToManage.players.filter((player: Player) => {
-      if (player.id === mySocket.id) {
+    const roomNoLeaver = roomToManage.players.filter((player: ServerPlayer) => {
+      if (player.actualSocketId === mySocket.id && player.sessionId === mySocket.handshake.auth.sessionid) {
         wasOwner = player.owner;
         playerName = player.pseudo;
         return false;

@@ -90,7 +90,6 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import type { EventID } from '../shared/types/solve.ts';
 import FeedBack from './components/feedBack.vue';
 import Mentionslegales from './components/mentionslegales.vue';
 

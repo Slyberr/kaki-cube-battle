@@ -5,8 +5,8 @@
  */
 
 import { Server } from 'socket.io';
-import { Room } from '../types/types.js';
 import { randomScrambleForEvent } from 'cubing/scramble';
+import { ServerPlayer, ServerRoom } from '../type';
 
 /**
  * Buisness logic when everyone in the room scored. 
@@ -15,7 +15,7 @@ import { randomScrambleForEvent } from 'cubing/scramble';
  * @param io 
  */
 export const everyoneScored = async (
-  rooms: Map<string, Room>,
+  rooms: Map<string, ServerRoom>,
   roomname: string,
   io: Server,
 ) => {
@@ -30,7 +30,9 @@ export const everyoneScored = async (
 
     room.actualScramble = newScramble;
     room.actualSolveId++;
-    room.players.map((player) => (player.state = 'READY'));
+    console.log('before',room.players);
+    room.players.forEach((player : ServerPlayer) => (player.state = 'READY'));
+    console.log('after map', room.players);
     io.to(roomname).emit('players-updated', room.players);
     io.to(roomname).emit('nextSolve', {
       solveToDisplay: room.currentSolve,

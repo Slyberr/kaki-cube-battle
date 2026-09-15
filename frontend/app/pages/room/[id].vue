@@ -15,21 +15,21 @@
 
   <div class="flex flex-col">
 
-    <div v-if="me" class="flex flex-col items-center gap-4 w-full">
+    <div v-if="me && room" class="flex flex-col items-center gap-4 w-full">
       <div v-if="showPage" id="head-info" class="relative flex flex-col text-center w-full">
-        <h1 class="text-3xl">{{ roomname }}</h1>
+        <h1 class="text-3xl">{{ room.roomname }}</h1>
 
         <p v-if="me.owner">(Vous êtes le<i class="text-primary"> modérateur</i>)</p>
         <p class="text-2xl">{{ puzzle }}</p>
         <div class="absolute top-22 flex justify-center w-full">
           <p
             class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
-            {{ scramble }}</p>
+            {{ room.actualScramble }}</p>
         </div>
         <div class="flex justify-center w-full" :class="me.owner ? 'pt-34' : 'pt-42'">
           <Timer :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
             :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
-            @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { scramble = 'Confirmation du temps...' } }"
+            @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { room.actualScramble = 'Confirmation du temps...' } }"
             @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
         </div>
       </div>
@@ -37,18 +37,18 @@
       <div id="twisty-container" class="flex w-full justify-end " />
     </div>
     <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
-     
+
       <UTooltip :disabled="dropDownMenuEnabled" text="Les options sont activées quand tous le monde est 'prêt'.">
         <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
       </UTooltip>
     </UDropdownMenu>
 
 
-    <div v-if="me && showPage" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
-      <TabBattle class="grow-8" v-if="roomPlayers.length > 0" :players="roomPlayers" :times="allSolves"
-        :solve-id="actualSolveId" :me="me" />
+    <div v-if="me && showPage && room" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
+      <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :times="room.allSolves"
+        :solve-id="room.actualSolveId" :me="me" />
 
-      <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="(roomname as string)" />
+      <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
     </div>
 
   </div>
@@ -68,19 +68,31 @@ import { Socket } from 'socket.io-client';
 import TabBattle from '../../components/tabBattle.vue'
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { TwistyPlayer } from 'cubing/twisty';
-import { type Player, type PlayerState } from '~~/shared/types/player.ts';
-import { mapEvent, type EventToDrawer, type Solve } from '~~/shared/types/solve.ts';
+import { initCustomFormatter } from 'vue';
+import { templateRef } from '@vueuse/core';
+
 
 const route = useRoute();
 const socket: Socket = useSocket();
 
-const roomname = ref<string | string[] | undefined>(route.params.id);
-const roomPlayers = ref<Player[]>([]);
-const me = ref<Player>({ id: 'null', owner: false, pseudo: 'johndoe', state: 'READY' });
-const actualSolveId = ref<number>(1);
 
-const allSolves = ref<Solve[]>([{ solveId: 0 }]);
-const scramble = ref<string>('');
+const room = reactive<ClientRoom>(
+  {
+    roomname: '',
+    players: [],
+    actualSolveId: 0,
+    allSolves: [{ solveId: 0 }],
+    actualScramble: '',
+    currentSolve: { solveId: 0 },
+    event: '333'
+  }
+);
+const me = reactive<ClientPlayer>({
+  owner: false,
+  pseudo: 'Error',
+  socketId: '',
+  state: 'READY'
+});
 const puzzle = ref<string>('');
 
 const localPlayerState = ref<PlayerState>('READY');
@@ -94,7 +106,7 @@ const showPage = ref<boolean>(false);
 
 const twistyContainer = ref<HTMLElement | null>(null);
 
-const dropDownMenuEnabled = computed(() => roomPlayers.value.every((player) => player.state === 'READY'));
+const dropDownMenuEnabled = computed(() => room.players.every((player) => player.state === 'READY'));
 const dropDownItems = computed((): DropdownMenuItem[][] => {
   return useGetDropDownMenu(
     readyHoldingTime,
@@ -102,9 +114,8 @@ const dropDownItems = computed((): DropdownMenuItem[][] => {
     inputMode,
     audiosForInspection,
     socket,
-    roomname as Ref<string>,
-    me,
-    roomPlayers
+    room,
+    me
   );
 });
 
@@ -119,7 +130,7 @@ definePageMeta({
 });
 
 useHead({
-  title: 'Kaki Cube | ' + roomname.value as string
+  title: 'Kaki Cube | ' + room.roomname
 });
 
 
@@ -128,20 +139,25 @@ useHead({
 
 onMounted(() => {
 
-  socket.on('send-all-room-data', (info: { players: Player[], scramble: string, event: string, actualSolveId: number, allSolves: Solve[], error: boolean }) => {
+  socket.on('send-all-room-data', (info: { room: ClientRoom, error: boolean }) => {
 
     if (!info.error) {
       showPage.value = true;
-      roomPlayers.value = info.players;
-      scramble.value = info.scramble;
+      room.players = info.room.players;
+      room.actualScramble = info.room.actualScramble;
+      room.event = info.room.event;
+      room.roomname = info.room.roomname;
 
-      if (roomPlayers.value.length > 0) {
-        me.value = roomPlayers.value[roomPlayers.value.length - 1]!;
+      if (room.players.length > 0) {
+
+        const tempMe = info.room.players.find((player) => player.socketId == socket.id)!;
+
+
         if (document.querySelector('twisty-player') === null) {
           drawer.value = new TwistyPlayer();
 
-          drawer.value.puzzle = (mapEvent.get(info.event)!.toDrawer) as EventToDrawer;
-          drawer.value.alg = scramble.value;
+          drawer.value.puzzle = (mapEvent.get(room.event)!.toDrawer) as EventToDrawer;
+          drawer.value.alg = room.actualScramble;
           drawer.value.visualization = '2D';
           drawer.value.controlPanel = 'none';
           drawer.value.background = 'none';
@@ -151,9 +167,9 @@ onMounted(() => {
         }
 
         //Scenario : i'm new player but the room already begin 
-        allSolves.value = info.allSolves.length !== 0 ? info.allSolves : [{ solveId: 0 }];
-        actualSolveId.value = info.actualSolveId;
-        puzzle.value = mapEvent.get(info.event)?.toDisplay ?? '';
+        room.allSolves = info.room.allSolves.length !== 0 ? info.room.allSolves : [{ solveId: 0 }];
+        room.actualSolveId = info.room.actualSolveId;
+        puzzle.value = mapEvent.get(room.event)?.toDisplay ?? '';
       }
 
     } else {
@@ -163,28 +179,36 @@ onMounted(() => {
   });
 
   //new player just come / someone change his state
-  socket.on('players-updated', (players: Player[]) => {
+  socket.on('players-updated', (players: ClientPlayer[]) => {
     if (players) {
-      roomPlayers.value = players;
-      me.value = players.find((player) => player.id === me.value.id)!;
+      room.players = players;
+      const tempMe = players.find((player) => player.socketId == socket.id)!
+      me.owner = tempMe.owner;
+      me.pseudo = tempMe.pseudo;
+      me.socketId = tempMe.socketId;
+      me.state = tempMe.state;
     }
   });
 
   //When a player disconnect
-  socket.on('remove-player', (players: Player[], userID: string) => {
-    roomPlayers.value = players;
-    const wasOwner = me.value.owner;
+  socket.on('remove-player', (withoutLeaver: ClientPlayer[], userID: string) => {
+    room.players = withoutLeaver;
+    const wasOwner = me.owner;
 
-    allSolves.value.forEach((solve) => {
+    room.allSolves.forEach((solve) => {
       delete solve[userID];
     })
 
-    const newMe = roomPlayers.value.find((player: Player) => player.id === me.value.id);
+    const newMe = room.players.find((player: ClientPlayer) => player.socketId === me.socketId);
     const toast = useToast();
 
     if (newMe) {
-      me.value = newMe;
-      if (me.value.owner && wasOwner === false) {
+      me.owner = newMe.owner;
+      me.pseudo = newMe.pseudo;
+      me.socketId = newMe.socketId;
+      me.state = newMe.state;
+
+      if (me.owner && wasOwner === false) {
         toast.add({
           title: 'Le modérateur de salle est parti.',
           description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
@@ -199,18 +223,18 @@ onMounted(() => {
     localPlayerState.value = 'READY';
     //Note 1 : I prefer to send the last solve only in order to not surcharge the "nextSolve" data send.
     // Note 2 : replace '0' solveID by 1 and after unshift with new scores.
-    if (actualSolveId.value === 1) {
-      allSolves.value = [data.solveToDisplay];
+    if (room.actualSolveId === 1) {
+      room.allSolves = [data.solveToDisplay];
     } else {
-      allSolves.value.unshift(data.solveToDisplay);
+      room.allSolves.unshift(data.solveToDisplay);
     }
 
     //Refresh scramble
-    scramble.value = data.scramble;
+    room.actualScramble = data.scramble;
     if (drawer.value) {
-      drawer.value.alg = scramble.value;
+      drawer.value.alg = room.actualScramble;
     }
-    actualSolveId.value = data.solveId;
+    room.actualSolveId = data.solveId;
   });
 
   //When owner change the event
@@ -219,21 +243,21 @@ onMounted(() => {
 
     if (eventInfo) {
       puzzle.value = eventInfo.toDisplay;
-      scramble.value = info.scramble;
+      room.actualScramble = info.scramble;
 
-      allSolves.value = [{ solveId: 0 }];
-      actualSolveId.value = 1;
+      room.allSolves = [{ solveId: 0 }];
+      room.actualSolveId = 1;
 
       //Maj twisty
       drawer.value!.puzzle = eventInfo.toDrawer as EventToDrawer;
-      drawer.value!.alg = scramble.value;
+      drawer.value!.alg = room.actualScramble;
     }
 
   });
 
   socket.on('session-cleaned', () => {
-    allSolves.value = [{ solveId: 0 }];
-    actualSolveId.value = 1;
+    room.allSolves = [{ solveId: 0 }];
+    room.actualSolveId = 1;
   });
 
   //emit on onMounted i-want-room-data to get data.
@@ -241,9 +265,9 @@ onMounted(() => {
 });
 
 const sendTime = (time: number, inspectionPenality: string, penalitySelected: string) => {
-  socket.emit('save-time', { time: time, inspectionPenality: inspectionPenality, penalitySelected: penalitySelected, solveId: actualSolveId.value });
+  socket.emit('save-time', { time: time, inspectionPenality: inspectionPenality, penalitySelected: penalitySelected, solveId: room.actualSolveId });
   localPlayerState.value = 'SCORED';
-  scramble.value = 'Attente des autres joueurs...';
+  room.actualScramble = 'Attente des autres joueurs...';
 };
 
 const leaveRoom = () => {

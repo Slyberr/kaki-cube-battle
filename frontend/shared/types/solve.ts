@@ -1,5 +1,3 @@
-import type { Player } from "./player";
-
 export type Solve = {
   solveId : number | any;
   [idUser : string] : 
@@ -64,14 +62,3 @@ export const mapEvent = new Map<string, { toDisplay: string, toDrawer: string }>
 
 export type Penality = 'NONE' | 'PLUS_2' | 'DNF';
 
-export type Room = {
-  roomname : string;
-  password?: string;
-  isPrivate: boolean;
-  players: Player[];
-  currentSolve: Solve;
-  allSolves: Solve[];
-  actualSolveId: number;
-  actualScramble: string;
-  event: EventID;
-};

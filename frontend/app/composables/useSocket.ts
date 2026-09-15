@@ -17,7 +17,7 @@ export const useSocket = () => {
     const storageID  : string | null = localStorage.getItem('keep-session');
     const storageDate : string | null = localStorage.getItem('date');
     
-    if (storageID === null || (storageDate !== null && !isValid(parseInt(storageDate),2)) ) {
+    if (storageID === null ) {
       localStorage.setItem('keep-session',sessionid);
     } 
     //refresh or create a date
