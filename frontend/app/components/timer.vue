@@ -383,12 +383,9 @@ const saveTime = () => {
     const [isOk, timeFormated] = isTimeFormatOk(manualTime.input);
 
     if (isOk) {
-      if (timeFormated === 'DNF') {
-        emits('time-sended', 0, 'NONE', 'DNF');
-      } else {
+      let time = 0;
+      if (timeFormated !== 'DNF') {
         let min = 0;
-        let time = 0;
-
         //max length for sec example :  15.20 = 5
         let isMinTime: boolean = timeFormated.length > 5;
         if (isMinTime) {
@@ -398,15 +395,13 @@ const saveTime = () => {
         } else {
           time = parseFloat(timeFormated) * 1000;
         }
-
-        timer.state = 'WAITING_OTHER';
-        inspectionPenality.value = 'NONE';
-        inspectionValue.value = 15;
-        manualTime.input = '';
-        manualTime.disabled = true;
-        emits('time-sended', time, 'NONE', 'NONE');
       }
-
+      timer.state = 'WAITING_OTHER';
+      inspectionPenality.value = 'NONE';
+      inspectionValue.value = 15;
+      manualTime.input = '';
+      manualTime.disabled = true;
+      emits('time-sended', time, 'NONE', timeFormated === 'DNF' ? 'DNF' : 'NONE');
     } else {
 
       toast.add({
