@@ -29,7 +29,7 @@
         <div class="flex justify-center w-full" :class="me.owner ? 'pt-34' : 'pt-42'">
           <Timer :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
             :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
-            @player-change-state="(state: PlayerState) => { socket.emit('change-state', state); if (state === 'CONFIRMATION') { room.actualScramble = 'Confirmation du temps...' } }"
+            @player-change-state="(state: PlayerState) => changeState(state)"
             @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
         </div>
       </div>
@@ -68,11 +68,7 @@ import { Socket } from 'socket.io-client';
 import TabBattle from '../../components/tabBattle.vue'
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { TwistyPlayer } from 'cubing/twisty';
-import { initCustomFormatter } from 'vue';
-import { templateRef } from '@vueuse/core';
 
-
-const route = useRoute();
 const socket: Socket = useSocket();
 
 
@@ -119,12 +115,15 @@ const dropDownItems = computed((): DropdownMenuItem[][] => {
   );
 });
 
+const toast = useToast();
+
 definePageMeta({
   middleware: [
     function (_, from) {
-      if (from.path !== '/home') {
-        return navigateTo('/home', { redirectCode: 301 })
-      }
+      // console.log(from);
+      // if (from.path !== '/home') {
+      //   return navigateTo('/home', { redirectCode: 301 })
+      // }
     }
   ]
 });
@@ -139,6 +138,9 @@ useHead({
 
 onMounted(() => {
 
+  //emit on onMounted i-want-room-data to get data.
+  socket.emit('i-want-room-data');
+
   socket.on('send-all-room-data', (info: { room: ClientRoom, error: boolean }) => {
 
     if (!info.error) {
@@ -150,8 +152,12 @@ onMounted(() => {
 
       if (room.players.length > 0) {
 
-        const tempMe = info.room.players.find((player) => player.socketId == socket.id)!;
-
+        const tempMe = info.room.players.find((player) => player.socketId === socket.id)!;
+        me.owner = tempMe.owner;
+        me.pseudo = tempMe.pseudo;
+        me.socketId = tempMe.socketId;
+        me.state = tempMe.state;
+        console.log(info);
 
         if (document.querySelector('twisty-player') === null) {
           drawer.value = new TwistyPlayer();
@@ -182,7 +188,7 @@ onMounted(() => {
   socket.on('players-updated', (players: ClientPlayer[]) => {
     if (players) {
       room.players = players;
-      const tempMe = players.find((player) => player.socketId == socket.id)!
+      const tempMe = players.find((player) => player.socketId === socket.id)!
       me.owner = tempMe.owner;
       me.pseudo = tempMe.pseudo;
       me.socketId = tempMe.socketId;
@@ -191,16 +197,16 @@ onMounted(() => {
   });
 
   //When a player disconnect
-  socket.on('remove-player', (withoutLeaver: ClientPlayer[], userID: string) => {
+  socket.on('remove-player', (withoutLeaver: ClientPlayer[], socketid: string) => {
     room.players = withoutLeaver;
     const wasOwner = me.owner;
 
     room.allSolves.forEach((solve) => {
-      delete solve[userID];
+      delete solve[socketid];
     })
 
     const newMe = room.players.find((player: ClientPlayer) => player.socketId === me.socketId);
-    const toast = useToast();
+
 
     if (newMe) {
       me.owner = newMe.owner;
@@ -260,8 +266,7 @@ onMounted(() => {
     room.actualSolveId = 1;
   });
 
-  //emit on onMounted i-want-room-data to get data.
-  socket.emit('i-want-room-data');
+
 });
 
 const sendTime = (time: number, inspectionPenality: string, penalitySelected: string) => {
@@ -274,6 +279,14 @@ const leaveRoom = () => {
   socket.emit("leave-room");
   return navigateTo("/home?return=yes");
 };
+
+const changeState = (state: PlayerState) => {
+  console.log(state,socket.id);
+  socket.emit('change-state', state);
+  if (state === 'CONFIRMATION') {
+    room.actualScramble = 'Confirmation du temps...';
+  }
+}
 
 onBeforeUnmount(() => {
   document.body.querySelector('twisty-player')?.remove();

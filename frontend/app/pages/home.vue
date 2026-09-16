@@ -137,36 +137,18 @@ definePageMeta({
   middleware: [
     function (to, from) {
 
-      //if the user leave the room with navigator navigation arrow.
-      if (from.path.includes('/room/') && to.path === '/home') {
-        socket.emit('leave-room');
-      }
+      // //if the user leave the room with navigator navigation arrow.
+      // if (from.path.includes('/room/') && to.path === '/home') {
+      //   socket.emit('leave-room');
+      // }
     }
   ]
-});
-
-
-
-onMounted(() => {
-
-  socket.on('go-to-room', async (data : {ok: boolean,roomname: string}) => {
-    btnLoading.value = false;
-    if (data.ok) {
-      await navigateTo('/room/' + data.roomname);
-    }
-    
-   
-  });
-});
-
-onBeforeUnmount(() => {
-  socket.off('go-to-room');
 });
 
 const createRoom = () => {
 
   if (socket !== null) {
-    btnLoading.value = true;
+    
     socket.emit('create-room', {
       roomname: state.roomname,
       isPrivate: state.isPrivate,
@@ -175,6 +157,12 @@ const createRoom = () => {
     });
   }
 };
+
+
+onMounted(() => { 
+  socket.emit('i-want-all-rooms');
+
+});
 
 const joinRoom = (currentRoom: string) => {
 

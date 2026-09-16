@@ -4,7 +4,7 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import { ServerRoom } from "../type";
+import { ServerRoom } from "../../type";
 
 
 /**
@@ -16,7 +16,10 @@ export const displayRoomsForHomePage = (rooms : Map<string,ServerRoom>) : { room
   let res: { roomname: string;isPrivate : boolean;currentEvent: EventID, length: number }[] = [];
 
   rooms.forEach((room, _) => {
-    res.push({ roomname: room.roomname,isPrivate : room.isPrivate,currentEvent : room.event, length: room.players.length });
+    if (!room.players.every((player) => player.actualSocketId === undefined)) {
+      res.push({ roomname: room.roomname,isPrivate : room.isPrivate,currentEvent : room.event, length: convertPlayersForClient(room.players).length });
+    }
+   
   });
   return res;
 };

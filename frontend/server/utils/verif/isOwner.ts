@@ -5,7 +5,7 @@
  */
 
 import { Socket } from 'socket.io';
-import { ServerRoom } from '../type';
+import { ServerRoom } from '../../type';
 
 /**
  * Verrify if the player is the room's owner.

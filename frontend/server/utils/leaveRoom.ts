@@ -9,7 +9,7 @@ import { everyoneScored } from './everyoneScored.js';
 import { ServerPlayer, ServerRoom } from '../type.js';
 
 /**
- * Buisness logic when a user leave a room (return button or disconnect or navgation arrow )
+ * Buisness logic when a user leave a room (wanted or expiration)
  * @param mySocket
  * @param roomname
  * @param rooms
@@ -79,7 +79,7 @@ export const leaveRoom = (
     io.emit('get-rooms', displayRoomsForHomePage(rooms));
 
     //special case : everyone submit his time but last one disconnected.
-    if (roomToManage.players.every((player) => player.state === 'SCORED')) {
+    if (roomToManage.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (player.actualSocketId === undefined))) {
       everyoneScored(rooms,roomname,io);
     } 
 

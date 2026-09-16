@@ -7,6 +7,7 @@
 import { Server } from 'socket.io';
 import { randomScrambleForEvent } from 'cubing/scramble';
 import { ServerPlayer, ServerRoom } from '../type';
+import { convertSolveForClient } from './convert/convertSolveForClient';
 
 /**
  * Buisness logic when everyone in the room scored. 
@@ -30,12 +31,13 @@ export const everyoneScored = async (
 
     room.actualScramble = newScramble;
     room.actualSolveId++;
-    console.log('before',room.players);
     room.players.forEach((player : ServerPlayer) => (player.state = 'READY'));
-    console.log('after map', room.players);
-    io.to(roomname).emit('players-updated', room.players);
+    io.to(roomname).emit('players-updated', convertPlayersForClient(room.players));
+
+  
+    const solveForClient = convertSolveForClient(room.currentSolve,room.players);
     io.to(roomname).emit('nextSolve', {
-      solveToDisplay: room.currentSolve,
+      solveToDisplay: solveForClient,
       scramble: newScramble,
       solveId: room.actualSolveId,
     });

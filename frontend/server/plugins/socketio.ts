@@ -7,13 +7,15 @@
 import { CorsOptions } from 'cors';
 import { Server as Engine } from 'engine.io';
 import { Server } from 'socket.io';
-import { displayRoomsForHomePage } from '../utils/displayRoomsForHomePage';
+import { displayRoomsForHomePage } from '../utils/convert/displayRoomsForHomePage';
 import { leaveRoom } from '../utils/leaveRoom';
 import { randomScrambleForEvent } from 'cubing/scramble';
 import { saveTime } from '../utils/saveTime';
-import { isOwner } from '../utils/isOwner';
-import { isSessionHaveRoom } from '../utils/isSessionHaveRoom';
+import { isOwner } from '../utils/verif/isOwner';
+import { roomOfSession } from '../utils/verif/roomOfSession';
 import { ServerRoom } from '../type';
+import { convertSolveForClient } from '../utils/convert/convertSolveForClient';
+import { convertPlayersForClient } from '../utils/convert/convertPlayersForClient';
 
 const corsOptions: CorsOptions = {
   origin: '*',
@@ -25,9 +27,7 @@ const corsOptions: CorsOptions = {
 const rooms: Map<string, ServerRoom> = new Map();
 
 //clean uselessroom
-setInterval(()=> {
-  
-},5000);
+setInterval(() => {}, 5000);
 
 export default defineNitroPlugin((nitroApp) => {
   const engine = new Engine();
@@ -35,27 +35,38 @@ export default defineNitroPlugin((nitroApp) => {
 
   io.bind(engine);
 
-  //new socket arrived.
-  io.use((socket, next) => {
-    const [clientHaveRoom, roomname] = isSessionHaveRoom(
-      socket.handshake.auth.sessionid,
-      rooms,
-    );
-    if (clientHaveRoom) {
-      socket.emit('go-to-room', roomname);
-      next();
-    } else {
-      next();
-    }
-  });
-
   io.on('connection', (socket) => {
     socket.data.roomname = '';
-
+    console.log(socket.id, socket.handshake.auth.sessionid);
     //app.vue on onMounted emit('i-want-all-rooms')
-
+    //This is the first thing the client will send.
     socket.on('i-want-all-rooms', () => {
-      socket.emit('get-rooms', displayRoomsForHomePage(rooms));
+      const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
+
+      //Comeback logic
+      if (room && !tabAlreadyOpen) {
+        socket.data.roomname = room.roomname;
+
+        //can come back if roomOfsession() affect a the new socketID.
+        room.players.forEach((player) => {
+          if (
+            player.sessionId === socket.handshake.auth.sessionid &&
+            player.actualSocketId === socket.id
+          ) {
+            player.expiration = undefined;
+            socket.join(room.roomname);
+
+            rooms.set(room.roomname, room);
+            socket.emit('go-to-room', { ok: true, roomname: room.roomname });
+            io.emit('get-rooms', displayRoomsForHomePage(rooms));
+          }
+        });
+      } else {
+        if (tabAlreadyOpen) {
+          socket.emit('error', 'Retour home car tab déjà ouvert 1');
+        }
+        socket.emit('get-rooms', displayRoomsForHomePage(rooms));
+      }
     });
 
     //Player disconnected
@@ -64,56 +75,60 @@ export default defineNitroPlugin((nitroApp) => {
       //   const roomname = socket.data.roomname;
       //   leaveRoom(socket, roomname, rooms, io, true);
       // }
-      const sessionID = socket.handshake.auth.sessionid
-      
-      const [clientHaveRoom,roomname] = isSessionHaveRoom(sessionID,rooms);
-    
-      if (clientHaveRoom) {
-        const room = rooms.get(roomname)!;
+
+      const [room, _] = roomOfSession(socket, rooms);
+
+      if (room) {
         room.players.forEach((player) => {
           //keep player on this room and waiting coming back before expiration.
-          if (player.actualSocketId === socket.id && player.sessionId === sessionID) {
+          if (
+            player.actualSocketId === socket.id &&
+            player.sessionId === socket.handshake.auth.sessionid
+          ) {
             player.actualSocketId = undefined;
-            socket.leave(roomname);
+            socket.leave(room.roomname);
             player.expiration = Date.now();
-           
-             //Stop display the leaver player and update the room.
-           
+            rooms.set(room.roomname, room);
           }
-        })
-         io.to(roomname).emit('remove-player', room.players.filter((player)=> player.sessionId !== sessionID), socket.id);
+        });
+        io.to(room.roomname).emit(
+          'remove-player',
+          convertPlayersForClient(room.players),
+          socket.id,
+        );
+        io.emit('get-rooms', displayRoomsForHomePage(rooms));
+        //If everyone in this room submit his time  (some players can be not here because can comeback)
+        if (room.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (player.actualSocketId === undefined))) {
+          everyoneScored(rooms,room.roomname,io);
+        }
       }
-
     });
 
     //Create room
     socket.on(
       'create-room',
-      async (room: {
+      async (info: {
         roomname: string;
         isPrivate: boolean;
         password: string;
         pseudo: string;
       }) => {
-        const [clientHaveRoom, roomname] = isSessionHaveRoom(
-          socket.handshake.auth.sessionID,
-          rooms,
-        );
+        const [room, _] = roomOfSession(socket, rooms);
 
-        if (!clientHaveRoom && !roomname) {
+        if (!room) {
           //Create socket.io Room + rooms with data.
-          socket.join(room.roomname);
-          socket.data.roomname = room.roomname;
-
-          rooms.set(room.roomname, {
-            roomname: room.roomname,
-            password: room.isPrivate ? room.password : undefined,
-            isPrivate: room.isPrivate,
+          socket.join(info.roomname);
+          socket.data.roomname = info.roomname;
+          socket.data.joiningRoom = true;
+          rooms.set(info.roomname, {
+            roomname: info.roomname,
+            password: info.isPrivate ? info.password : undefined,
+            isPrivate: info.isPrivate,
             players: [
               {
                 sessionId: socket.handshake.auth.sessionid,
                 actualSocketId: socket.id,
-                pseudo: room.pseudo,
+                pseudo: info.pseudo,
                 owner: true,
                 state: 'READY',
               },
@@ -124,22 +139,14 @@ export default defineNitroPlugin((nitroApp) => {
             event: '333',
             actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
-          socket.emit('go-to-room', { ok: true, roomname: room.roomname });
-          console.log(room.pseudo + ' created ' + room.roomname + "'s room.");
+          socket.emit('go-to-room', { ok: true, roomname: info.roomname });
+          console.log(info.pseudo + ' created ' + info.roomname + "'s room.");
 
-          //when a new player come (event for players already in room)
-          io.to(room.roomname).emit(
-            'players-updated',
-            rooms.get(room.roomname)?.players,
-          );
-
-          //Emit to EVERYONE rooms updated
-          io.emit('get-rooms', displayRoomsForHomePage(rooms));
         } else {
-          if (clientHaveRoom) {
+          if (room) {
             socket.emit(
               'error',
-              'Vous avez déjà une session active ! Vérifiez vos onglets.',
+              'Vous avez déjà une session active ! Vérifiez vos onglets ou rechargez la page.',
             );
           } else {
             socket.emit('error', 'Une salle de ce nom existe déjà !.');
@@ -153,25 +160,26 @@ export default defineNitroPlugin((nitroApp) => {
     socket.on(
       'join-room',
       (info: { roomname: string; password: string; pseudo: string }) => {
-        const [clientHaveRoom, _] = isSessionHaveRoom(
-          socket.handshake.auth.sessionID,
-          rooms,
-        );
+        const [room, _] = roomOfSession(socket, rooms);
 
-        if (!clientHaveRoom) {
-          const room = rooms.get(info.roomname);
+        if (!room) {
+          const roomtoJoin = rooms.get(info.roomname);
 
-          if (room && room.isPrivate && room.password !== info.password) {
+          if (
+            roomtoJoin &&
+            roomtoJoin.isPrivate &&
+            roomtoJoin.password !== info.password
+          ) {
             socket.emit('error', 'mot de passe incorrect !');
             socket.emit('go-to-room', { ok: false, roomname: '' });
           } else if (
-            room &&
-            room.players.some((player) => player.pseudo === info.pseudo)
+            roomtoJoin &&
+            roomtoJoin.players.some((player) => player.pseudo === info.pseudo)
           ) {
             socket.emit('error', 'Le pseudo est déjà pris !');
             socket.emit('go-to-room', { ok: false, roomname: '' });
-          } else if (room) {
-            room.players.push({
+          } else if (roomtoJoin) {
+            roomtoJoin.players.push({
               sessionId: socket.handshake.auth.sessionid,
               actualSocketId: socket.id,
               pseudo: info.pseudo,
@@ -179,53 +187,65 @@ export default defineNitroPlugin((nitroApp) => {
               state: 'READY',
             });
 
-            socket.join(room.roomname);
-            socket.data.roomname = room.roomname;
-            rooms.set(room.roomname, room);
+            socket.join(roomtoJoin.roomname);
+            socket.data.joiningRoom = true;
+            rooms.set(roomtoJoin.roomname, roomtoJoin);
             //redirect on room/[id].vue
             console.log(info.pseudo + ' join this room: ' + info.roomname);
-            socket.emit('go-to-room', { ok: true, roomname: room.roomname });
-
-            //Emit to EVERYONE rooms updated
-            io.emit('get-rooms', displayRoomsForHomePage(rooms));
-
-            //when a new player come (event for players already in room)
-            io.to(room.roomname).emit('players-updated', room.players);
+            socket.emit('go-to-room', {
+              ok: true,
+              roomname: roomtoJoin.roomname,
+            });
           }
         } else {
-          //Strange comportment, it's can't be possible but purge the player.
-          leaveRoom(socket, info.roomname, rooms, io, false);
+          if (room) {
+            socket.emit(
+              'error',
+              'Vous avez déjà une session active ! Vérifiez vos onglets ou rechargez la page.',
+            );
+          }
         }
       },
     );
 
     //asked immediatly when playe entry on room/[id].vue
+    //Do a comeback logic too here.
     socket.on('i-want-room-data', () => {
-      const roomname = socket.data.roomname;
-      if (roomname && rooms.has(roomname)) {
-        const room = rooms.get(roomname)!;
+      const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
+
+      if (room && (!tabAlreadyOpen || socket.data.joiningRoom !== false)) {
+        //when a new player come (event for players already in room)
+        io.to(room.roomname).emit(
+          'players-updated',
+          convertPlayersForClient(room.players),
+        );
+        //Emit to EVERYONE rooms updated
+        io.emit('get-rooms', displayRoomsForHomePage(rooms));
+
+        socket.data.joiningRoom = false;
+        socket.data.roomname = room.roomname;
+        //socket.join(room.roomname)
         //players, times...
         const clientRoom: ClientRoom = {
           roomname: room.roomname,
           actualScramble: room.actualScramble,
           actualSolveId: room.actualSolveId,
-          allSolves: room.allSolves,
-          currentSolve: room.currentSolve,
+          allSolves: room.allSolves.map((solve) =>
+            convertSolveForClient(solve, room.players),
+          ),
+          currentSolve: convertSolveForClient(room.currentSolve, room.players),
           event: room.event,
-          players: room.players.map((player) => {
-            return {
-              socketId: socket.id,
-              pseudo: player.pseudo,
-              owner: player.owner,
-              state: player.state,
-            } as ClientPlayer;
-          }),
+          players: convertPlayersForClient(room.players),
         };
-        socket.emit('send-all-room-data', {
-          room : clientRoom,
+
+        io.to(room.roomname).emit('send-all-room-data', {
+          room: clientRoom,
           error: false,
         });
       } else {
+        if (tabAlreadyOpen) {
+          socket.emit('error', 'Retour home car tab déjà ouvert 2');
+        }
         socket.emit('send-all-room-data', { error: true });
       }
     });
@@ -241,16 +261,20 @@ export default defineNitroPlugin((nitroApp) => {
     //When a player juste change his state (solving, inspecting...)
     socket.on('change-state', (state: PlayerState) => {
       const roomname = socket.data.roomname;
-
       if (roomname && rooms.has(roomname)) {
         const room = rooms.get(roomname)!;
         const player = room.players.find(
-          (player) => player.sessionId === socket.handshake.auth.sessionid && player.actualSocketId === socket.id,
+          (player) =>
+            player.sessionId === socket.handshake.auth.sessionid &&
+            player.actualSocketId === socket.id,
         );
 
         if (player) {
           player.state = state;
-          io.to(roomname).emit('players-updated', room.players);
+          io.to(roomname).emit(
+            'players-updated',
+            convertPlayersForClient(room.players),
+          );
           rooms.set(roomname, room);
         }
       }
@@ -274,7 +298,7 @@ export default defineNitroPlugin((nitroApp) => {
             info.time,
             info.inspectionPenality,
             info.penalitySelected,
-            socket.id,
+            socket,
             info.solveId,
           );
         }
@@ -359,7 +383,9 @@ export default defineNitroPlugin((nitroApp) => {
       if (roomname && rooms.has(roomname)) {
         const room = rooms.get(roomname)!;
         const player = room.players.find(
-          (player) => player.sessionId === socket.handshake.auth.sessionid && socket.id === player.actualSocketId,
+          (player) =>
+            player.sessionId === socket.handshake.auth.sessionid &&
+            socket.id === player.actualSocketId,
         );
         if (player) {
           io.to(roomname).emit('get-message', {

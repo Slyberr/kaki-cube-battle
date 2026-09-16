@@ -1,6 +1,8 @@
 export type Solve = {
   solveId : number | any;
-  [idUser : string] : 
+
+  //On server == Sessionid, on client == socketId;
+  [id : string] : 
   | {time: number, finalPenality : 'DNF' | '+2' | '+4' | 'OK'} 
   | any;
 };

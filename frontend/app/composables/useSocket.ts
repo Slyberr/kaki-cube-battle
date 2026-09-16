@@ -12,13 +12,14 @@ let socket : Socket | null = null;
 export const useSocket = () => {
   if (!socket) {
     const date = Date.now();
-    const sessionid = crypto.randomUUID();
-
-    const storageID  : string | null = localStorage.getItem('keep-session');
-    const storageDate : string | null = localStorage.getItem('date');
     
-    if (storageID === null ) {
-      localStorage.setItem('keep-session',sessionid);
+
+    const sessionid  : string | null = localStorage.getItem('keep-session');
+    const storageDate : string | null = localStorage.getItem('date');
+   
+    if (sessionid === null ) {
+      const uuid = crypto.randomUUID();
+      localStorage.setItem('keep-session',uuid);
     } 
     //refresh or create a date
     localStorage.setItem('date',date.toString());

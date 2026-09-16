@@ -102,7 +102,14 @@ const errorToast = useToast();
 const colorMode = useColorMode();
 colorMode.preference = 'dark';
 
-onMounted(() => {
+onMounted(() => { 
+
+  socket.on('go-to-room', async (data : {ok: boolean,roomname: string}) => {
+
+  if (data.ok) {
+      await navigateTo('/room/' + data.roomname);
+    }  
+  });
 
   socket.on('get-rooms', (therooms: { roomname: string, isPrivate: boolean, currentEvent: EventID; length: number }[]) => {
     rooms.value = therooms;
@@ -124,13 +131,12 @@ onMounted(() => {
     return navigateTo("/home?return=yes");
   });
 
-  socket.emit('i-want-all-rooms');
-
 });
 
 onBeforeUnmount(() => {
   socket.off('get-rooms');
   socket.off('error');
   socket.off('removed');
+  socket.off('go-to-room');
 });
 </script>
