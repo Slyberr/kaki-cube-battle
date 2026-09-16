@@ -37,7 +37,6 @@ export default defineNitroPlugin((nitroApp) => {
 
   io.on('connection', (socket) => {
     socket.data.roomname = '';
-    console.log(socket.id, socket.handshake.auth.sessionid);
     //app.vue on onMounted emit('i-want-all-rooms')
     //This is the first thing the client will send.
     socket.on('i-want-all-rooms', () => {
@@ -57,13 +56,13 @@ export default defineNitroPlugin((nitroApp) => {
             socket.join(room.roomname);
 
             rooms.set(room.roomname, room);
-            socket.emit('go-to-room', { ok: true, roomname: room.roomname });
+            socket.emit('go-to-room', { ok: true });
             io.emit('get-rooms', displayRoomsForHomePage(rooms));
           }
         });
       } else {
         if (tabAlreadyOpen) {
-          socket.emit('error', 'Retour home car tab déjà ouvert 1');
+          socket.emit('error', 'Attention ! Vous venez d\'ouvrir un nouvel onglet alors que vous avez une session active !');
         }
         socket.emit('get-rooms', displayRoomsForHomePage(rooms));
       }
@@ -98,9 +97,16 @@ export default defineNitroPlugin((nitroApp) => {
         );
         io.emit('get-rooms', displayRoomsForHomePage(rooms));
         //If everyone in this room submit his time  (some players can be not here because can comeback)
-        if (room.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (player.actualSocketId === undefined))) {
+        //AND there is >= 1 active player
+        
+        if (room.players.every(
+          (player)=> 
+            (player.state === 'SCORED' && player.actualSocketId) || 
+            (player.actualSocketId === undefined)) 
+          && room.players.some((player)=> player.actualSocketId)) 
+          {
           everyoneScored(rooms,room.roomname,io);
-        }
+          }
       }
     });
 
@@ -115,7 +121,7 @@ export default defineNitroPlugin((nitroApp) => {
       }) => {
         const [room, _] = roomOfSession(socket, rooms);
 
-        if (!room) {
+        if (!room && !rooms.has(info.roomname)) {
           //Create socket.io Room + rooms with data.
           socket.join(info.roomname);
           socket.data.roomname = info.roomname;
@@ -133,13 +139,13 @@ export default defineNitroPlugin((nitroApp) => {
                 state: 'READY',
               },
             ],
-            currentSolve: { solveId: -1 },
-            allSolves: [],
+            currentSolve: { solveId: 0 },
+            allSolves: [{ solveId: 0 }],
             actualSolveId: 1,
             event: '333',
             actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
-          socket.emit('go-to-room', { ok: true, roomname: info.roomname });
+          socket.emit('go-to-room', { ok: true });
           console.log(info.pseudo + ' created ' + info.roomname + "'s room.");
 
         } else {
@@ -151,7 +157,7 @@ export default defineNitroPlugin((nitroApp) => {
           } else {
             socket.emit('error', 'Une salle de ce nom existe déjà !.');
           }
-          socket.emit('go-to-room', { ok: false, roomname: '' });
+          socket.emit('go-to-room', { ok: false });
         }
       },
     );
@@ -171,13 +177,13 @@ export default defineNitroPlugin((nitroApp) => {
             roomtoJoin.password !== info.password
           ) {
             socket.emit('error', 'mot de passe incorrect !');
-            socket.emit('go-to-room', { ok: false, roomname: '' });
+            socket.emit('go-to-room', { ok: false });
           } else if (
             roomtoJoin &&
             roomtoJoin.players.some((player) => player.pseudo === info.pseudo)
           ) {
             socket.emit('error', 'Le pseudo est déjà pris !');
-            socket.emit('go-to-room', { ok: false, roomname: '' });
+            socket.emit('go-to-room', { ok: false });
           } else if (roomtoJoin) {
             roomtoJoin.players.push({
               sessionId: socket.handshake.auth.sessionid,
@@ -192,10 +198,7 @@ export default defineNitroPlugin((nitroApp) => {
             rooms.set(roomtoJoin.roomname, roomtoJoin);
             //redirect on room/[id].vue
             console.log(info.pseudo + ' join this room: ' + info.roomname);
-            socket.emit('go-to-room', {
-              ok: true,
-              roomname: roomtoJoin.roomname,
-            });
+            socket.emit('go-to-room', { ok: true });
           }
         } else {
           if (room) {
@@ -233,7 +236,6 @@ export default defineNitroPlugin((nitroApp) => {
           allSolves: room.allSolves.map((solve) =>
             convertSolveForClient(solve, room.players),
           ),
-          currentSolve: convertSolveForClient(room.currentSolve, room.players),
           event: room.event,
           players: convertPlayersForClient(room.players),
         };
@@ -244,7 +246,7 @@ export default defineNitroPlugin((nitroApp) => {
         });
       } else {
         if (tabAlreadyOpen) {
-          socket.emit('error', 'Retour home car tab déjà ouvert 2');
+          socket.emit('error', 'Attention: Vous essayez de rejoindre une salle alors que vous avez déjà un onglet sur une salle.');
         }
         socket.emit('send-all-room-data', { error: true });
       }
@@ -254,7 +256,7 @@ export default defineNitroPlugin((nitroApp) => {
     socket.on('leave-room', () => {
       const roomname = socket.data.roomname;
       if (roomname) {
-        leaveRoom(socket, roomname, rooms, io, false);
+        leaveRoom(socket, roomname, rooms, io);
       }
     });
 
@@ -312,8 +314,8 @@ export default defineNitroPlugin((nitroApp) => {
       if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
         room.event = event;
-        room.currentSolve = { solveId: -1 };
-        room.allSolves = [];
+        room.currentSolve = { solveId: 0 };
+        room.allSolves = [{ solveId: 0 }];
         room.actualScramble = (await randomScrambleForEvent(event)).toString();
         room.actualSolveId = 1;
         rooms.set(roomname, room);
@@ -335,8 +337,8 @@ export default defineNitroPlugin((nitroApp) => {
       const roomname = socket.data.roomname;
       if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
-        room.currentSolve = { solveId: -1 };
-        room.allSolves = [];
+        room.currentSolve = { solveId: 0 };
+        room.allSolves = [{ solveId: 0 }];
         room.actualSolveId = 1;
         io.to(roomname).emit('session-cleaned');
       } else {
@@ -355,7 +357,7 @@ export default defineNitroPlugin((nitroApp) => {
         //On va pas se kick soi-même quand même.
         if (kickPlayer && kickPlayer.id !== socket.id) {
           kickPlayer.leave(roomname);
-          leaveRoom(kickPlayer, roomname, rooms, io, false);
+          leaveRoom(kickPlayer, roomname, rooms, io);
           kickPlayer.emit(
             'removed',
             'Il a été décidé par le modérateur de vous exclure de la room ' +

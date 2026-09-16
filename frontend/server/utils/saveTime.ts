@@ -38,7 +38,7 @@ export const saveTime = async (
 
     if (player) {
       //it mean  'no one in this solve submit before'
-      if (room.currentSolve.solveId === -1) {
+      if (room.currentSolve.solveId === 0) {
         room.currentSolve = {
           solveId: solveId,
         };

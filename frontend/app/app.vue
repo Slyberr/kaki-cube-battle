@@ -104,10 +104,10 @@ colorMode.preference = 'dark';
 
 onMounted(() => { 
 
-  socket.on('go-to-room', async (data : {ok: boolean,roomname: string}) => {
+  socket.on('go-to-room', async (data : {ok: boolean}) => {
 
   if (data.ok) {
-      await navigateTo('/room/' + data.roomname);
+      await navigateTo('/room/');
     }  
   });
 

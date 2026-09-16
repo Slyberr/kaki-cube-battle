@@ -14,21 +14,18 @@ import { ServerPlayer, ServerRoom } from '../type.js';
  * @param roomname
  * @param rooms
  * @param io
- * @param disconnected True if he leave or reload the page. False if he just leave the room.
+
  */
 export const leaveRoom = (
   mySocket: Socket,
   roomname: string,
   rooms: Map<string, ServerRoom>,
   io: Server,
-  disconnected: boolean,
 ) => {
 
-  const  roomToManage = rooms.get(roomname);
+  const roomToManage = rooms.get(roomname);
   
-  if (!disconnected) {
-    mySocket.leave(roomname);
-  }
+  mySocket.leave(roomname);
   mySocket.data.roomname = '';  
   
   let playerName = '';
@@ -70,12 +67,13 @@ export const leaveRoom = (
       }
 
       rooms.set(roomname, roomToManage);
-      console.log(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
+     
     
       //Stop display the leaver player and update the room.
-      io.to(roomname).emit('remove-player', roomToManage.players, mySocket.id);
+      io.to(roomname).emit('remove-player', convertPlayersForClient(roomToManage.players), mySocket.id);
+      console.log(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
     }
-    //Update rooms.
+    //Update rooms
     io.emit('get-rooms', displayRoomsForHomePage(rooms));
 
     //special case : everyone submit his time but last one disconnected.

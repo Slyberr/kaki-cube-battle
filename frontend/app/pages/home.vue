@@ -133,18 +133,6 @@ const windowWidth = useWindowSize().width.value;
 
 const socket = useSocket();
 
-definePageMeta({
-  middleware: [
-    function (to, from) {
-
-      // //if the user leave the room with navigator navigation arrow.
-      // if (from.path.includes('/room/') && to.path === '/home') {
-      //   socket.emit('leave-room');
-      // }
-    }
-  ]
-});
-
 const createRoom = () => {
 
   if (socket !== null) {

@@ -65,7 +65,6 @@
  */
 
 import { Socket } from 'socket.io-client';
-import TabBattle from '../../components/tabBattle.vue'
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { TwistyPlayer } from 'cubing/twisty';
 
@@ -79,7 +78,6 @@ const room = reactive<ClientRoom>(
     actualSolveId: 0,
     allSolves: [{ solveId: 0 }],
     actualScramble: '',
-    currentSolve: { solveId: 0 },
     event: '333'
   }
 );
@@ -117,22 +115,6 @@ const dropDownItems = computed((): DropdownMenuItem[][] => {
 
 const toast = useToast();
 
-definePageMeta({
-  middleware: [
-    function (_, from) {
-      // console.log(from);
-      // if (from.path !== '/home') {
-      //   return navigateTo('/home', { redirectCode: 301 })
-      // }
-    }
-  ]
-});
-
-useHead({
-  title: 'Kaki Cube | ' + room.roomname
-});
-
-
 
 //ALL LISTENERS SECTIONS
 
@@ -142,7 +124,6 @@ onMounted(() => {
   socket.emit('i-want-room-data');
 
   socket.on('send-all-room-data', (info: { room: ClientRoom, error: boolean }) => {
-
     if (!info.error) {
       showPage.value = true;
       room.players = info.room.players;
@@ -157,7 +138,6 @@ onMounted(() => {
         me.pseudo = tempMe.pseudo;
         me.socketId = tempMe.socketId;
         me.state = tempMe.state;
-        console.log(info);
 
         if (document.querySelector('twisty-player') === null) {
           drawer.value = new TwistyPlayer();
@@ -173,7 +153,7 @@ onMounted(() => {
         }
 
         //Scenario : i'm new player but the room already begin 
-        room.allSolves = info.room.allSolves.length !== 0 ? info.room.allSolves : [{ solveId: 0 }];
+        room.allSolves = info.room.allSolves.length === 1 && info.room.allSolves[0]?.solveId === 0 ? [{ solveId: 0 }] : info.room.allSolves;
         room.actualSolveId = info.room.actualSolveId;
         puzzle.value = mapEvent.get(room.event)?.toDisplay ?? '';
       }
@@ -229,7 +209,8 @@ onMounted(() => {
     localPlayerState.value = 'READY';
     //Note 1 : I prefer to send the last solve only in order to not surcharge the "nextSolve" data send.
     // Note 2 : replace '0' solveID by 1 and after unshift with new scores.
-    if (room.actualSolveId === 1) {
+    room.actualSolveId = data.solveId;
+    if (data.solveId === 2) {
       room.allSolves = [data.solveToDisplay];
     } else {
       room.allSolves.unshift(data.solveToDisplay);
@@ -240,7 +221,7 @@ onMounted(() => {
     if (drawer.value) {
       drawer.value.alg = room.actualScramble;
     }
-    room.actualSolveId = data.solveId;
+
   });
 
   //When owner change the event
@@ -281,7 +262,6 @@ const leaveRoom = () => {
 };
 
 const changeState = (state: PlayerState) => {
-  console.log(state,socket.id);
   socket.emit('change-state', state);
   if (state === 'CONFIRMATION') {
     room.actualScramble = 'Confirmation du temps...';

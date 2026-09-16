@@ -21,10 +21,12 @@ export const everyoneScored = async (
   io: Server,
 ) => {
   const room = rooms.get(roomname);
+  //if someone is in
   if (room) {
     const newScramble = (
       await randomScrambleForEvent(room?.event ?? '333')
     ).toString();
+
 
     //Each new row is the first row.
     room.allSolves.unshift(room.currentSolve);
@@ -42,7 +44,7 @@ export const everyoneScored = async (
       solveId: room.actualSolveId,
     });
 
-    room.currentSolve = { solveId: -1 };
+    room.currentSolve = { solveId: 0 };
     rooms.set(roomname, room);
   }
 };
