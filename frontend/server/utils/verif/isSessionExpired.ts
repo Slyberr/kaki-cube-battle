@@ -1,3 +1,9 @@
+/*
+ * Kaki Cube — Copyright (C) 2026 Louis Presti
+ * Licensed under AGPL-3.0. See LICENSE file or
+ * https://www.gnu.org/licenses/agpl-3.0.html
+ */
+
 /**
  * Verify that session still valid.
  * @param timestamp 

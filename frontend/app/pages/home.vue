@@ -114,7 +114,6 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-
 import { useWindowSize } from '@vueuse/core';
 import * as v from 'valibot';
 

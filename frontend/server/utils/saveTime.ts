@@ -4,7 +4,6 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-
 import { Server, Socket } from 'socket.io';
 import { everyoneScored } from './everyoneScored.js';
 import { ServerPlayer, ServerRoom } from '../type.js';
