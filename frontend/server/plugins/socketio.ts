@@ -16,6 +16,7 @@ import { roomOfSession } from '../utils/verif/roomOfSession';
 import { ServerRoom } from '../type';
 import { convertSolveForClient } from '../utils/convert/convertSolveForClient';
 import { convertPlayersForClient } from '../utils/convert/convertPlayersForClient';
+import { isSessionExpired } from '../utils/verif/isSessionExpired';
 
 const corsOptions: CorsOptions = {
   origin: '*',
@@ -26,8 +27,54 @@ const corsOptions: CorsOptions = {
 
 const rooms: Map<string, ServerRoom> = new Map();
 
-//clean uselessroom
-setInterval(() => {}, 5000);
+//clean inactives players (30min after leave a room).
+const min = 0.5;
+setInterval(() => {
+  console.log('------------------Rooms state log------------------');
+  rooms.forEach((room) => {
+    let playerToPurge: string[] = [];
+    if (room.players.length > 0) {
+      room.players.forEach((player) => {
+        if (
+          player.actualSocketId === undefined &&
+          player.expiration !== undefined &&
+          isSessionExpired(player.expiration, min)
+        ) {
+          //Purge times
+
+          room.allSolves.forEach((solve) => {
+            delete solve[player.sessionId];
+          });
+          playerToPurge.push(player.sessionId);
+          console.info(
+            `player ${player.pseudo} on ${room.roomname}'s room was deleted -> inactivity: ${(Date.now() - player.expiration) / 1000}s > ${min * 60}s.`,
+          );
+        }
+      });
+      //purge players
+      room.players = room.players.filter(
+        (player) => !playerToPurge.includes(player.sessionId),
+      );
+    }
+    if (room.players.length === 0) {
+      //Room empty not deleted because the last one just close tab
+      rooms.delete(room.roomname);
+      console.info(
+        `${room.roomname}'s room deleted -> \n The last one disconnected and never try to come back before expiration`,
+      );
+    } else {
+      console.info(`${room.roomname}'s room.`);
+      console.info('Players left : ');
+      room.players.forEach((player) =>
+        console.info(
+          player.pseudo,
+          player.actualSocketId ? '(active)' : '(inactive)',
+        ),
+      );
+    }
+  });
+  console.log('------------------End Rooms state log------------------');
+}, 10000);
 
 export default defineNitroPlugin((nitroApp) => {
   const engine = new Engine();
@@ -44,25 +91,31 @@ export default defineNitroPlugin((nitroApp) => {
 
       //Comeback logic
       if (room && !tabAlreadyOpen) {
-        socket.data.roomname = room.roomname;
+       
 
         //can come back if roomOfsession() affect a the new socketID.
-        room.players.forEach((player) => {
-          if (
+        const player = room.players.find(
+          (player) =>
             player.sessionId === socket.handshake.auth.sessionid &&
-            player.actualSocketId === socket.id
-          ) {
-            player.expiration = undefined;
-            socket.join(room.roomname);
+            player.actualSocketId === socket.id,
+        );
 
-            rooms.set(room.roomname, room);
-            socket.emit('go-to-room', { ok: true });
-            io.emit('get-rooms', displayRoomsForHomePage(rooms));
-          }
-        });
+        if (player) {
+          player.expiration = undefined;
+          socket.data.roomname = room.roomname;
+          socket.data.joiningRoom = true
+          
+          socket.join(room.roomname);
+
+
+          rooms.set(room.roomname, room);
+          socket.emit('go-to-room', { ok: true });
+          io.emit('get-rooms', displayRoomsForHomePage(rooms));
+        }
+
       } else {
         if (tabAlreadyOpen) {
-          socket.emit('error', 'Attention ! Vous venez d\'ouvrir un nouvel onglet alors que vous avez une session active !');
+          socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
         }
         socket.emit('get-rooms', displayRoomsForHomePage(rooms));
       }
@@ -98,15 +151,17 @@ export default defineNitroPlugin((nitroApp) => {
         io.emit('get-rooms', displayRoomsForHomePage(rooms));
         //If everyone in this room submit his time  (some players can be not here because can comeback)
         //AND there is >= 1 active player
-        
-        if (room.players.every(
-          (player)=> 
-            (player.state === 'SCORED' && player.actualSocketId) || 
-            (player.actualSocketId === undefined)) 
-          && room.players.some((player)=> player.actualSocketId)) 
-          {
-          everyoneScored(rooms,room.roomname,io);
-          }
+
+        if (
+          room.players.every(
+            (player) =>
+              (player.state === 'SCORED' && player.actualSocketId) ||
+              player.actualSocketId === undefined,
+          ) &&
+          room.players.some((player) => player.actualSocketId)
+        ) {
+          everyoneScored(rooms, room.roomname, io);
+        }
       }
     });
 
@@ -146,18 +201,14 @@ export default defineNitroPlugin((nitroApp) => {
             actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
           socket.emit('go-to-room', { ok: true });
-          console.log(info.pseudo + ' created ' + info.roomname + "'s room.");
-
+          console.info(info.pseudo + ' created ' + info.roomname + "'s room.");
         } else {
           if (room) {
-            socket.emit(
-              'error',
-              'Vous avez déjà une session active ! Vérifiez vos onglets ou rechargez la page.',
-            );
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
           } else {
             socket.emit('error', 'Une salle de ce nom existe déjà !.');
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: false });
           }
-          socket.emit('go-to-room', { ok: false });
         }
       },
     );
@@ -177,13 +228,13 @@ export default defineNitroPlugin((nitroApp) => {
             roomtoJoin.password !== info.password
           ) {
             socket.emit('error', 'mot de passe incorrect !');
-            socket.emit('go-to-room', { ok: false });
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: false });
           } else if (
             roomtoJoin &&
             roomtoJoin.players.some((player) => player.pseudo === info.pseudo)
           ) {
             socket.emit('error', 'Le pseudo est déjà pris !');
-            socket.emit('go-to-room', { ok: false });
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: false });
           } else if (roomtoJoin) {
             roomtoJoin.players.push({
               sessionId: socket.handshake.auth.sessionid,
@@ -197,15 +248,12 @@ export default defineNitroPlugin((nitroApp) => {
             socket.data.joiningRoom = true;
             rooms.set(roomtoJoin.roomname, roomtoJoin);
             //redirect on room/[id].vue
-            console.log(info.pseudo + ' join this room: ' + info.roomname);
+            console.info(info.pseudo + ' join this room: ' + info.roomname);
             socket.emit('go-to-room', { ok: true });
           }
         } else {
           if (room) {
-            socket.emit(
-              'error',
-              'Vous avez déjà une session active ! Vérifiez vos onglets ou rechargez la page.',
-            );
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
           }
         }
       },
@@ -216,7 +264,10 @@ export default defineNitroPlugin((nitroApp) => {
     socket.on('i-want-room-data', () => {
       const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
 
-      if (room && (!tabAlreadyOpen || socket.data.joiningRoom !== false)) {
+      if (
+        room &&
+        (tabAlreadyOpen === false || socket.data.joiningRoom === true)
+      ) {
         //when a new player come (event for players already in room)
         io.to(room.roomname).emit(
           'players-updated',
@@ -245,9 +296,6 @@ export default defineNitroPlugin((nitroApp) => {
           error: false,
         });
       } else {
-        if (tabAlreadyOpen) {
-          socket.emit('error', 'Attention: Vous essayez de rejoindre une salle alors que vous avez déjà un onglet sur une salle.');
-        }
         socket.emit('send-all-room-data', { error: true });
       }
     });

@@ -1,10 +1,10 @@
 <template>
 
   <UModal>
-    <UButton color="primary" variant="ghost" label="Retour" icon="lucide:arrow-left" />
+    <UButton color="primary" variant="ghost" label="Partir de la salle" icon="lucide:arrow-left" />
     <template #content="{ close }">
       <div class="flex flex-col p-8  gap-10 items-center justify-between">
-        <p>En quittant la room, vous serez indirectement éjectée et vos scores seront supprimés. Partir ? </p>
+        <p>En quittant la salle, vous perderez TOUS vos scores en cours. Partir ? </p>
         <div class="flex justify-between  w-[80%] sm:w-[50%]">
           <UButton class="w-20" label="Oui" @click="leaveRoom()" icon="lucide:check" />
           <UButton class="w-20" label="Non" @click="close" icon="lucide:x" />
@@ -123,7 +123,7 @@ onMounted(() => {
   //emit on onMounted i-want-room-data to get data.
   socket.emit('i-want-room-data');
 
-  socket.on('send-all-room-data', (info: { room: ClientRoom, error: boolean }) => {
+  socket.on('send-all-room-data', async(info: { room: ClientRoom, error: boolean }) => {
     if (!info.error) {
       showPage.value = true;
       room.players = info.room.players;
@@ -160,10 +160,14 @@ onMounted(() => {
 
     } else {
       //It's happend when a user comeback to page with next arrow navigation.
-      return navigateTo('/home');
+       toast.add({
+          title: 'Impossible de rejoindre !',
+          description: 'Vous ne pouvez pas rejoindre une salle par URL, même publique.',
+          duration: 5000
+        })
+      await navigateTo('/home');
     }
   });
-
   //new player just come / someone change his state
   socket.on('players-updated', (players: ClientPlayer[]) => {
     if (players) {

@@ -53,7 +53,7 @@ export const leaveRoom = (
     if (roomToManage.players.length < 1) {
       //Socket.io auto-deleting if no one left.
       rooms.delete(roomname);
-      console.log(
+      console.info(
         'room',
         roomname,
         'deleted. rooms status :',
@@ -71,7 +71,7 @@ export const leaveRoom = (
     
       //Stop display the leaver player and update the room.
       io.to(roomname).emit('remove-player', convertPlayersForClient(roomToManage.players), mySocket.id);
-      console.log(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
+      console.info(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
     }
     //Update rooms
     io.emit('get-rooms', displayRoomsForHomePage(rooms));

@@ -5,7 +5,6 @@
  */
 
 import { io, Socket } from 'socket.io-client';
-import { isValid } from '~/utils/isValid';
 
 let socket : Socket | null = null;
 
@@ -15,14 +14,11 @@ export const useSocket = () => {
     
 
     const sessionid  : string | null = localStorage.getItem('keep-session');
-    const storageDate : string | null = localStorage.getItem('date');
    
     if (sessionid === null ) {
       const uuid = crypto.randomUUID();
       localStorage.setItem('keep-session',uuid);
     } 
-    //refresh or create a date
-    localStorage.setItem('date',date.toString());
     
     socket = io( {auth : {sessionid}});
   }

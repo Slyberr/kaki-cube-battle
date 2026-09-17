@@ -96,18 +96,27 @@ import Mentionslegales from './components/mentionslegales.vue';
 const rooms = useState<{ roomname: string, isPrivate: boolean, currentEvent: EventID; length: number }[]>('rooms');
 const socket = useSocket();
 const errorToast = useToast();
-
+const btnLoading = useState<boolean>('home-btns-loading');
+const displayHomePage = useState<boolean>('show-home');
 
 //theme dark is for everyone on 1.0.
 const colorMode = useColorMode();
 colorMode.preference = 'dark';
+btnLoading.value = false;
+displayHomePage.value = true;
 
 onMounted(() => { 
 
-  socket.on('go-to-room', async (data : {ok: boolean}) => {
-
-  if (data.ok) {
-      await navigateTo('/room/');
+  socket.on('go-to-room', async (data : {ok: boolean,tabAlreadyOpen? : boolean}) => {
+    btnLoading.value = false
+    if (data.ok) {
+      await navigateTo('/room');
+    } else {
+      if (data.tabAlreadyOpen) {
+        displayHomePage.value = false;
+      } else {
+        displayHomePage.value = true;
+      }
     }  
   });
 
