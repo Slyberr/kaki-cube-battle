@@ -4,39 +4,36 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import { Server } from 'socket.io';
-import { Player, Room } from '../types/types.js';
+import { Server, Socket } from 'socket.io';
 import { everyoneScored } from './everyoneScored.js';
+import { ServerPlayer, ServerRoom } from '../type.js';
 
 /**
- * Buisness logic when a user leave a room (return button or disconnect or navgation arrow )
+ * Buisness logic when a user leave a room (wanted or expiration)
  * @param mySocket
  * @param roomname
  * @param rooms
  * @param io
- * @param disconnected True if he leave or reload the page. False if he just leave the room.
+
  */
 export const leaveRoom = (
-  mySocket: any,
+  mySocket: Socket,
   roomname: string,
-  rooms: Map<string, Room>,
+  rooms: Map<string, ServerRoom>,
   io: Server,
-  disconnected: boolean,
 ) => {
 
-  const  roomToManage = rooms.get(roomname);
+  const roomToManage = rooms.get(roomname);
   
-  if (!disconnected) {
-    mySocket.leave(roomname);
-  }
+  mySocket.leave(roomname);
   mySocket.data.roomname = '';  
   
   let playerName = '';
   if (roomToManage) {
     let wasOwner = false;
 
-    const roomNoLeaver = roomToManage.players.filter((player: Player) => {
-      if (player.id === mySocket.id) {
+    const roomNoLeaver = roomToManage.players.filter((player: ServerPlayer) => {
+      if (player.actualSocketId === mySocket.id && player.sessionId === mySocket.handshake.auth.sessionid) {
         wasOwner = player.owner;
         playerName = player.pseudo;
         return false;
@@ -56,7 +53,7 @@ export const leaveRoom = (
     if (roomToManage.players.length < 1) {
       //Socket.io auto-deleting if no one left.
       rooms.delete(roomname);
-      console.log(
+      console.info(
         'room',
         roomname,
         'deleted. rooms status :',
@@ -70,16 +67,17 @@ export const leaveRoom = (
       }
 
       rooms.set(roomname, roomToManage);
-      console.log(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
+     
     
       //Stop display the leaver player and update the room.
-      io.to(roomname).emit('remove-player', roomToManage.players, mySocket.id);
+      io.to(roomname).emit('remove-player', convertPlayersForClient(roomToManage.players), mySocket.id);
+      console.info(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
     }
-    //Update rooms.
+    //Update rooms
     io.emit('get-rooms', displayRoomsForHomePage(rooms));
 
     //special case : everyone submit his time but last one disconnected.
-    if (roomToManage.players.every((player) => player.state === 'SCORED')) {
+    if (roomToManage.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (!player.actualSocketId))) {
       everyoneScored(rooms,roomname,io);
     } 
 

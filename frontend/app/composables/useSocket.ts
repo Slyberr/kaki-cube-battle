@@ -10,7 +10,19 @@ let socket : Socket | null = null;
 
 export const useSocket = () => {
   if (!socket) {
-    socket = io();
+    const haveSession  : string | null = localStorage.getItem('keep-session');
+    let sessionid : string = '';
+    
+    if (!haveSession) {
+      sessionid = crypto.randomUUID();
+      localStorage.setItem('keep-session',sessionid);
+      socket = io( {auth : {sessionid}});
+    } else {
+      sessionid = haveSession;
+      socket = io( {auth : {sessionid}});
+    }
+    
+    
   }
   return socket;
 };

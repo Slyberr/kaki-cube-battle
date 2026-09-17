@@ -1,6 +1,5 @@
 <template>
-    <p >La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 13 sept
-        2026).</p>
+    <p >La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 17 sept 2026).</p>
     <div class="text-muted">
         <div class="text-lg">1/ Motivation sur la vie privée et les données </div>
         <p class="text-xs">
@@ -11,14 +10,19 @@
             Précision pour Cstimer qui propose ce service sans compte mais de façon plus restreinte (uniquement le 3x3,
             que le dernier temps montré, etc).
             <br />
-            <br />
             Proposer ce service sans compte allège grandement les soucis quant à la fuite des données sensibles et la
             vie privée.
             <br />
-            Ce site fonctionne sans base de données, c'est aussi pourquoi les données nécessaires au fonctionnement de
+            <br />
+            - Ce site fonctionne sans base de données, c'est aussi pourquoi les données nécessaires au fonctionnement de
             la salle sont supprimées dès que possible pour des raisons de performance.
             <br />
-            Aucun cookie, même technique, n'est utilisé.
+            <br />
+            - Aucun cookie, même technique, n'est utilisé.
+            <br />
+            <br /> 
+            - Une variable de session locale est ajoutée pour la persistance de session. Cela est utilisé pour retrouver votre salle et vos scores lorsque
+            vous fermez l'onglet actif ou votre navigateur par exemple.
 
         </p>
         <br />
@@ -70,21 +74,33 @@
 
         <div class="text-md">2.2/ Précision sur la durée de vie de la session d'un joueur</div>
         <p class="text-xs">
-            Lorsque vous fermez l'onglet,que vous rechargez la plage ou même que vous ne laissez plus l'onglet au
-            premier plan sur un téléphone ou une tablette,
-            votre session est expirée, c'est à dire que l'ancien identifiant que vous étiez n'existe plus sur le
-            serveur. Vous perdez alors la salle où vous étiez, vos scores ainsi que votre pseudo.
+            Depuis la version 1.1 de Kaki Cube, lorsque vous fermez l'onglet, que vous rechargez la page ou encore que vous ne laissez plus l'onglet au
+            premier plan sur un téléphone ou une tablette, votre session est expirable au bout de 30 minutes.
+            Autrement dit, pendant ce temps là, les autres joueurs peuvent continuer à jouer sans vous et sans vous voir, mais vous pouvez revenir si
+            vous essayer de revenir sur kakicube.com. Vos scores restent alors intacts.
+            <br />
+            <br />
+            La persistance de session est gérée grâce à le stockage d'un identifiant (UUID) de session locale sur votre navigateur.
+            Cela est utilisé exclusivement pour le fonctionnement des salles de jeux de kakicube.com.
+            <br />
+            Une fois la session expiré, (car vous n'avez pas essayé de vous reconnecter avant le temps imparti) l'identifiant de session est toujours 
+            présent dans votre navigateur, mais est totalement dissocié de kakicube.com.
+
         </p>
         <br />
-        <div class="text-sm">2.2.1/ Potentielle amélioration possible</div>
-        <p class="text-xs">
-            Si cela est reclamé par la communauté, une persistance pourrait être mise en place.
-            Cela permetterai de sauvegarder quelques états utiles comme l'utilisation ou non de l'inspection, le mode de
-            saisie, le temps nécessaire avant de déclencher le chronomètre, etc.
-            Cele implique une utilisation de cookie/session qui modifierai alors la politique de confidentialité.
-            Louis Presti s'engage à faire le maximum pour limiter l'utilisation de ces outils afin que Kaki Cube VS
-            reste un endroit respecteux de votre vie privée.
+        <div class="text-sm">2.2.1/ Supprimer l'identifiant de session locale</div>
+        <p class="text-xs">Pour supprimer l'indentifiant de session locale, vous pouvez ouvrir l'inspecteur de votre navigateur (F12) puis rechercher l'onglet 'stockage'.
+            Vous verez alors la section 'Stockage local' (le nom peut différer selon votre navigateur et votre langue), dérouler et trouvez 'kakicube.com'.
+            Vous vous retrouvez la variable 'keep-session' qui sert justement à cet usage et nuxt-color-mode, qui permet de stocker votre préférence de thème sombre ou clair.
+            Une icone indiquera que vous pouvez supprimer toutes les variables.
+            <br />
+            <br />
+            Attention ! Si vous retournez sur le site, ces variables reviendront systématiquement.
+            De plus, si vous les supprimez, kakicube.com ne sera plus en mesure de savoir si vous êtes dans une partie ou non. Tous vos scores seront supprimés.
         </p>
+    
+        <br />
+     
         <br />
         <div class="text-lg">3/ Le formulaire de retour</div>
         <p class="text-xs">

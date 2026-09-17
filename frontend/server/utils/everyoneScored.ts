@@ -5,8 +5,9 @@
  */
 
 import { Server } from 'socket.io';
-import { Room } from '../types/types.js';
 import { randomScrambleForEvent } from 'cubing/scramble';
+import { ServerPlayer, ServerRoom } from '../type';
+import { convertSolveForClient } from './convert/convertSolveForClient';
 
 /**
  * Buisness logic when everyone in the room scored. 
@@ -15,30 +16,35 @@ import { randomScrambleForEvent } from 'cubing/scramble';
  * @param io 
  */
 export const everyoneScored = async (
-  rooms: Map<string, Room>,
+  rooms: Map<string, ServerRoom>,
   roomname: string,
   io: Server,
 ) => {
   const room = rooms.get(roomname);
+  //if someone is in
   if (room) {
     const newScramble = (
       await randomScrambleForEvent(room?.event ?? '333')
     ).toString();
+
 
     //Each new row is the first row.
     room.allSolves.unshift(room.currentSolve);
 
     room.actualScramble = newScramble;
     room.actualSolveId++;
-    room.players.map((player) => (player.state = 'READY'));
-    io.to(roomname).emit('players-updated', room.players);
+    room.players.forEach((player : ServerPlayer) => (player.state = 'READY'));
+    io.to(roomname).emit('players-updated', convertPlayersForClient(room.players));
+
+  
+    const solveForClient = convertSolveForClient(room.currentSolve,room.players);
     io.to(roomname).emit('nextSolve', {
-      solveToDisplay: room.currentSolve,
+      solveToDisplay: solveForClient,
       scramble: newScramble,
       solveId: room.actualSolveId,
     });
 
-    room.currentSolve = { solveId: -1 };
+    room.currentSolve = { solveId: 0 };
     rooms.set(roomname, room);
   }
 };

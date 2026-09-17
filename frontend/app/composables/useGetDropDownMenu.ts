@@ -6,7 +6,7 @@
 
 import type { DropdownMenuItem } from '@nuxt/ui/runtime/components/DropdownMenu.vue.js';
 import type { Socket } from 'socket.io-client';
-import type { Player } from '~/types/player';
+import type { Reactive } from 'vue';
 
 /**
  * Give the dropdownMenu option
@@ -15,9 +15,8 @@ import type { Player } from '~/types/player';
  * @param inputMode
  * @param audioForInspection
  * @param socket
- * @param roomname
+ * @param room
  * @param me
- * @param roomPlayers
  * @returns
  */
 export const useGetDropDownMenu = (
@@ -26,21 +25,24 @@ export const useGetDropDownMenu = (
   inputMode: Ref<'KEYBOARD' | 'MANUALLY'>,
   audioForInspection: Ref<(string| HTMLAudioElement)[]>,
   socket: Socket,
-  roomname: Ref<string>,
-  me: Ref<Player>,
-  roomPlayers: Ref<Player[]>,
+  room: Reactive<ClientRoom>,
+  me: Reactive<ClientPlayer>,
 ): DropdownMenuItem[][] => {
-  const playersToexpulseMenu = [];
-  for (let i = 0; i < roomPlayers.value.length; i++) {
-    if (roomPlayers.value[i]?.id !== me.value.id) {
+  
+  const playersToexpulseMenu: any[] = [];
+
+  room.players.forEach((player) => {
+     if (player.socketId !== me.socketId) {
       playersToexpulseMenu.push({
-        label: roomPlayers.value[i]?.pseudo,
+        label: player.pseudo,
         onSelect: () => {
-          socket.emit('kick-player', roomPlayers.value[i]?.id);
+          socket.emit('kick-player', player.socketId);
         },
       });
     }
-  }
+  })
+   
+  
 
   const menuForEveryone: DropdownMenuItem[][] = [
     [
@@ -187,7 +189,7 @@ export const useGetDropDownMenu = (
       },
     ],
   ];
-  if (me.value.owner) {
+  if (me.owner) {
     menuForEveryone.push([
       {
         label: "Changer d'épreuve",

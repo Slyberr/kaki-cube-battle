@@ -4,9 +4,9 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import { Penality, Player, Room } from '../types/types.js';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { everyoneScored } from './everyoneScored.js';
+import { ServerPlayer, ServerRoom } from '../type.js';
 
 /**
  * Buisneed logic when a player saving time.
@@ -16,51 +16,52 @@ import { everyoneScored } from './everyoneScored.js';
  * @param time
  * @param inspectionPenality
  * @param penalitySelected
- * @param playerId
+ * @param socket
  * @param solveId
  */
 export const saveTime = async (
   roomname: string,
-  rooms: Map<string, Room>,
+  rooms: Map<string, ServerRoom>,
   io: Server,
   time: number,
   inspectionPenality: Penality,
   penalitySelected: Penality,
-  playerId: string,
+  socket: Socket,
   solveId: number,
 ) => {
   const room = rooms.get(roomname);
 
   if (room) {
-    const player = room.players.find((player: Player) => player.id === playerId);
+    const player = room.players.find(
+      (player: ServerPlayer) => player.sessionId === socket.handshake.auth.sessionid && player.actualSocketId === socket.id);
 
     if (player) {
       //it mean  'no one in this solve submit before'
-      if (room.currentSolve.solveId === -1) {
+      if (room.currentSolve.solveId === 0) {
         room.currentSolve = {
           solveId: solveId,
         };
       }
 
       if (inspectionPenality === 'DNF' || penalitySelected === 'DNF' ) {
-        room.currentSolve[playerId] = {time : time,finalPenality : 'DNF'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : 'DNF'};
         
       } else if (inspectionPenality === 'PLUS_2' && penalitySelected === 'PLUS_2') {
-        room.currentSolve[playerId] = {time : time,finalPenality : '+4'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : '+4'};
         
       } else if (inspectionPenality === 'PLUS_2' || penalitySelected === 'PLUS_2') {
-        room.currentSolve[playerId] = {time : time,finalPenality : '+2'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : '+2'};
       
       } else {
-        room.currentSolve[playerId] = {time : time,finalPenality : 'OK'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : 'OK'};
       }
 
       player.state = 'SCORED';
       rooms.set(roomname,room);
-      io.to(roomname).emit('players-updated', room.players);
+      io.to(roomname).emit('players-updated', convertPlayersForClient(room.players));
 
-      //If everyone in this room submit his time
-      if (room.players.every((player) => player.state === 'SCORED')) {
+      //If everyone in this room submit his time  (some players can be not here because can comeback)
+      if (room.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (!player.actualSocketId))) {
         everyoneScored(rooms,roomname,io);
       } 
     }
