@@ -13,11 +13,8 @@
 
 import { timeForHuman } from '#imports';
 import type { TableColumn, TableRow } from '@nuxt/ui'
-import type { Player, PlayerState } from '~/types/player';
-import type { Solve } from '~/types/solve';
 
-
-const props = defineProps<{ players: Player[], times: Solve[], solveId: number, me: Player }>()
+const props = defineProps<{ players: ClientPlayer[], times: Solve[], solveId: number, me: ClientPlayer }>()
 
 
 const colonnes = computed<TableColumn<Solve>[]>(() => {
@@ -37,19 +34,19 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
 
     for (let player of props.players) {
         mainColumns.push({
-            accessorKey: player.id,
+            accessorKey: player.socketId,
             header: () => {
                 const pseudo = player.pseudo;
                 const state = stateForHuman(player.state);
-                const themean = mean(player.id);
-                const ao5 = currentAvg(5, player.id);
-                const ao12 = currentAvg(12, player.id)
+                const themean = mean(player.socketId);
+                const ao5 = currentAvg(5, player.socketId);
+                const ao12 = currentAvg(12, player.socketId)
 
 
                 return h('div', { class: 'flex justify-center' },
                     [h('div', { class: 'text-center flex flex-col' }, [
                         
-                        h('span', { class: player.id === props.me.id ? 'text-primary' : 'text-gray-100' }, player.id === props.me.id ? 'Vous' : pseudo),
+                        h('span', { class: player.socketId === props.me.socketId ? 'text-primary' : 'text-gray-100' }, player.socketId === props.me.socketId ? 'Vous' : pseudo),
                         h('span', { class: 'text-gray-100  italic' }, state),
                         h('span',{ class: 'text-secondary-400' }, 'ao5: ' + ao5),
                         h('span', {class:'text-gray-100'}, 'ao12 ' + ao12),
@@ -60,16 +57,16 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
             },
             meta: {
                 class: {
-                    th: player.id === props.me.id ? "text-primary" : "text-neutral",
+                    th: player.socketId === props.me.socketId ? "text-primary" : "text-neutral",
                     td: 'min-w-42',
 
                 },
             },
             cell: ({ row }) => {
 
-                return h('div', { class: `${isBestSolveTime(row, player.id) ? 'text-primary-500' : 'text-gray-100'}` }, () => {
-                    if (row.getValue(player.id) !== undefined) {
-                        const obj = row.getValue(player.id) as { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' };
+                return h('div', { class: `${isBestSolveTime(row, player.socketId) ? 'text-primary-500' : 'text-gray-100'}` }, () => {
+                    if (row.getValue(player.socketId)) {
+                        const obj = row.getValue(player.socketId) as { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' };
                         const timeReadable = timeForHuman(obj.time);
                         if (obj.finalPenality === 'DNF') {
                             return `DNF(${timeReadable})`;
@@ -144,7 +141,7 @@ const mean = (playerId: string) => {
 
 const currentAvg = (avgOf: 5 | 12, playerId: string) => {
 
-    if (props.times.filter((solve) => solve[playerId] !== undefined).length >= avgOf) {
+    if (props.times.filter((solve) => solve[playerId]).length >= avgOf) {
         const lastSolves = props.times.slice(0, avgOf);
         const nbOfDNF = lastSolves.filter((solve: any) => (solve[playerId].finalPenality === 'DNF')).length;
         if (nbOfDNF > 1) {

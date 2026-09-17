@@ -90,20 +90,35 @@
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
 
-import type { EventID } from './types/solve';
 import FeedBack from './components/feedBack.vue';
 import Mentionslegales from './components/mentionslegales.vue';
 
 const rooms = useState<{ roomname: string, isPrivate: boolean, currentEvent: EventID; length: number }[]>('rooms');
 const socket = useSocket();
 const errorToast = useToast();
-
+const btnLoading = useState<boolean>('home-btns-loading');
+const displayHomePage = useState<boolean>('show-home');
 
 //theme dark is for everyone on 1.0.
 const colorMode = useColorMode();
 colorMode.preference = 'dark';
+btnLoading.value = false;
+displayHomePage.value = true;
 
-onMounted(() => {
+onMounted(() => { 
+
+  socket.on('go-to-room', async (data : {ok: boolean,tabAlreadyOpen? : boolean}) => {
+    btnLoading.value = false
+    if (data.ok) {
+      await navigateTo('/room');
+    } else {
+      if (data.tabAlreadyOpen) {
+        displayHomePage.value = false;
+      } else {
+        displayHomePage.value = true;
+      }
+    }  
+  });
 
   socket.on('get-rooms', (therooms: { roomname: string, isPrivate: boolean, currentEvent: EventID; length: number }[]) => {
     rooms.value = therooms;
@@ -122,16 +137,14 @@ onMounted(() => {
       description: data,
 
     });
-    return navigateTo("/home?return=yes");
+    return navigateTo("/home");
   });
-
-  socket.emit('i-want-all-rooms');
-
 });
 
 onBeforeUnmount(() => {
   socket.off('get-rooms');
   socket.off('error');
   socket.off('removed');
+  socket.off('go-to-room');
 });
 </script>

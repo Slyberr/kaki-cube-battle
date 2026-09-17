@@ -21,10 +21,13 @@ Le principal avantage est que l'utilisation du site ne nécessite aucun compte p
 
 ###### - Trouver plus facilement de la documentation et l'appliquer dans le code.
 
-###### - Comme aide pour trouver certains bugs coriaces de performance ou d’hydratation ou pour mettre en place correctement le nom de domaine le DNS et la config de hébergeur.
+###### - Comme aide pour trouver certains bugs coriaces de performance ou d’hydratation.
+
+###### - Aider à mettre en place correctement le nom de domaine le DNS et la config de hébergeur (jamais expérimenté auparavant).
 
 ###### - Générer le CODE du SVG de l’icône qui sert d'emblème au site, sachant qu'il a été sensiblement modifié pour s'adapter à mes envies.
 
+###### - Assurer un role de tuteur : poser des questions pour comprendre un concept inconnu afin de rapidement comprendre comme l'exploiter.
 
 
 

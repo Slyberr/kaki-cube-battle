@@ -7,12 +7,16 @@
 import { CorsOptions } from 'cors';
 import { Server as Engine } from 'engine.io';
 import { Server } from 'socket.io';
-import { EventID, Penality, PlayerState, Room } from '../types/types';
-import { displayRoomsForHomePage } from '../utils/displayRoomsForHomePage';
+import { displayRoomsForHomePage } from '../utils/convert/displayRoomsForHomePage';
 import { leaveRoom } from '../utils/leaveRoom';
 import { randomScrambleForEvent } from 'cubing/scramble';
 import { saveTime } from '../utils/saveTime';
-import { isOwner } from '../utils/isOwner';
+import { isOwner } from '../utils/verif/isOwner';
+import { roomOfSession } from '../utils/verif/roomOfSession';
+import { ServerRoom } from '../type';
+import { convertSolveForClient } from '../utils/convert/convertSolveForClient';
+import { convertPlayersForClient } from '../utils/convert/convertPlayersForClient';
+import { isSessionExpired } from '../utils/verif/isSessionExpired';
 
 const corsOptions: CorsOptions = {
   origin: '*',
@@ -21,87 +25,207 @@ const corsOptions: CorsOptions = {
   optionsSuccessStatus: 204,
 };
 
+const rooms: Map<string, ServerRoom> = new Map();
 
-const rooms : Map<string,Room> = new Map();
+//clean inactives players (30min after leave a room).
+const min = 30;
+setInterval(() => {
+  console.log('------------------Rooms state log------------------');
+  rooms.forEach((room) => {
+    let playerToPurge: string[] = [];
+    if (room.players.length > 0) {
+      room.players.forEach((player) => {
+        if (
+          !player.actualSocketId &&
+          player.expiration &&
+          isSessionExpired(player.expiration, min)
+        ) {
+          //Purge times
+
+          room.allSolves.forEach((solve) => {
+            delete solve[player.sessionId];
+          });
+          playerToPurge.push(player.sessionId);
+          console.info(
+            `player ${player.pseudo} on ${room.roomname}'s room was deleted -> inactivity: ${(Date.now() - player.expiration) / 1000}s > ${min * 60}s.`,
+          );
+        }
+      });
+
+      //purge players
+      room.players = room.players.filter(
+        (player) => !playerToPurge.includes(player.sessionId),
+      );
+    }
+
+    if (room.players.length === 0) {
+      //Room empty not deleted because the last one just close tab
+      rooms.delete(room.roomname);
+      console.info(
+        `${room.roomname}'s room deleted -> \n The last one disconnected and never try to come back before expiration`,
+      );
+    } else {
+      console.info(`${room.roomname}'s room.`);
+      console.info('Players left : ');
+      room.players.forEach((player) =>
+        console.info(
+          player.pseudo,
+          player.actualSocketId ? '(active)' : '(inactive)',
+        ),
+      );
+    }
+  });
+  console.log('------------------End Rooms state log------------------');
+  //Can purge rooms each 10 mins.
+}, 1000 * 60 * 10);
 
 export default defineNitroPlugin((nitroApp) => {
-
   const engine = new Engine();
   const io: Server = new Server({ cors: corsOptions });
+
   io.bind(engine);
 
   io.on('connection', (socket) => {
     socket.data.roomname = '';
-    
-    console.log('new user :', socket.id);
-
-    //app.vue on he onMounted emit('i-want-all-rooms')
+    //app.vue on onMounted emit('i-want-all-rooms')
+    //This is the first thing the client will send.
     socket.on('i-want-all-rooms', () => {
-      socket.emit('get-rooms', displayRoomsForHomePage(rooms));
-    })
-    
+      const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
+
+      //Comeback logic
+      if (room && !tabAlreadyOpen) {
+        //can come back if roomOfsession() affect a the new socketID.
+        const player = room.players.find(
+          (player) =>
+            player.sessionId === socket.handshake.auth.sessionid &&
+            player.actualSocketId === socket.id,
+        );
+
+        if (player) {
+          if (!room.players.find((player) => player.owner)) {
+            //all was disconnected or room was empty.
+            player.owner = true;
+          }
+
+          player.expiration = undefined;
+          socket.data.roomname = room.roomname;
+          socket.data.joiningRoom = true;
+
+          socket.join(room.roomname);
+
+          rooms.set(room.roomname, room);
+          socket.emit('go-to-room', { ok: true });
+          io.emit('get-rooms', displayRoomsForHomePage(rooms));
+        }
+      } else {
+        if (tabAlreadyOpen) {
+          socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
+        }
+        socket.emit('get-rooms', displayRoomsForHomePage(rooms));
+      }
+    });
+
     //Player disconnected
     socket.on('disconnect', () => {
-      if (socket.data.roomname !== '') {
-        const roomname = socket.data.roomname;
-        leaveRoom(socket, roomname, rooms, io, true);       
-      }
+      // if (socket.data.roomname !== '') {
+      //   const roomname = socket.data.roomname;
+      //   leaveRoom(socket, roomname, rooms, io, true);
+      // }
 
-      console.log('Bye', socket.id);
+      const [room, _] = roomOfSession(socket, rooms);
+
+      if (room) {
+        room.players.forEach((player) => {
+          //keep player on this room and waiting coming back before expiration.
+          if (
+            player.actualSocketId === socket.id &&
+            player.sessionId === socket.handshake.auth.sessionid
+          ) {
+            player.actualSocketId = undefined;
+            if (player.owner) {
+              player.owner = false;
+                room.players.find((player2)=> { 
+                if (player2.actualSocketId  && !player2.owner ) { 
+                  player2.owner = true; 
+                  return true;
+                } else {
+                  return false;
+                }
+              })
+            }
+            
+            socket.leave(room.roomname);
+        
+            player.expiration = Date.now();
+            rooms.set(room.roomname, room);
+          }
+        });
+        io.to(room.roomname).emit(
+          'remove-player',
+          convertPlayersForClient(room.players),
+          socket.id,
+        );
+        io.emit('get-rooms', displayRoomsForHomePage(rooms));
+        //If everyone in this room submit his time  (some players can be not here because can comeback)
+        //AND there is >= 1 active player
+
+        if (
+          room.players.every(
+            (player) =>
+              (player.state === 'SCORED' && player.actualSocketId) ||
+              !player.actualSocketId,
+          ) &&
+          room.players.some((player) => player.actualSocketId)
+        ) {
+          everyoneScored(rooms, room.roomname, io);
+        }
+      }
     });
 
     //Create room
     socket.on(
       'create-room',
-      async (room: {
+      async (info: {
         roomname: string;
         isPrivate: boolean;
         password: string;
         pseudo: string;
       }) => {
-      
-        if (socket.data.roomname === '' && !rooms.has(room.roomname)) {
-          //Create socket.io Room + rooms with data.
-          socket.join(room.roomname);
-          socket.data.roomname = room.roomname;
+        const [room, _] = roomOfSession(socket, rooms);
 
-          rooms.set(room.roomname, {
-            roomname: room.roomname,
-            password: room.isPrivate ? room.password : undefined,
-            isPrivate: room.isPrivate,
+        if (!room && !rooms.has(info.roomname)) {
+          //Create socket.io Room + rooms with data.
+          socket.join(info.roomname);
+          socket.data.roomname = info.roomname;
+          socket.data.joiningRoom = true;
+          rooms.set(info.roomname, {
+            roomname: info.roomname,
+            password: info.isPrivate ? info.password : undefined,
+            isPrivate: info.isPrivate,
             players: [
               {
-                id: socket.id,
-                pseudo: room.pseudo,
+                sessionId: socket.handshake.auth.sessionid,
+                actualSocketId: socket.id,
+                pseudo: info.pseudo,
                 owner: true,
                 state: 'READY',
               },
             ],
-            currentSolve: { solveId: -1 },
-            allSolves: [],
+            currentSolve: { solveId: 0 },
+            allSolves: [{ solveId: 0 }],
             actualSolveId: 1,
             event: '333',
             actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
-          socket.emit('go-to-room', {ok : true, roomname : room.roomname});
-          console.log(room.pseudo + ' created new room : ' + room.roomname)
-
-          //when a new player come (event for players already in room)
-          io.to(room.roomname).emit(
-            'players-updated',
-            rooms.get(room.roomname)?.players,
-          );
-
-          //Emit to EVERYONE rooms updated
-          io.emit('get-rooms', displayRoomsForHomePage(rooms));
+          socket.emit('go-to-room', { ok: true });
+          console.info(info.pseudo + ' created ' + info.roomname + "'s room.");
         } else {
-          if(socket.data.roomname !== '') {
-            socket.emit('error', 'Impossible de créer la salle car vous êtes dans une autre salle. Rechargez la page.');
+          if (room) {
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
           } else {
-             socket.emit('error', 'Une salle de ce nom existe déjà !.');
+            socket.emit('error', 'Une salle de ce nom existe déjà !.');
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: false });
           }
-          
-          socket.emit('go-to-room', {ok : false, roomname : ''});
         }
       },
     );
@@ -110,67 +234,86 @@ export default defineNitroPlugin((nitroApp) => {
     socket.on(
       'join-room',
       (info: { roomname: string; password: string; pseudo: string }) => {
-        if (
-          socket.data.roomname === '' &&
-          !rooms
-            .get(info.roomname)
-            ?.players.find((player) => player.id === socket.id)
-        ) {
-          const room = rooms.get(info.roomname);
+        const [room, _] = roomOfSession(socket, rooms);
 
-          if (room && room.isPrivate && room.password !== info.password) {
+        if (!room) {
+          const roomtoJoin = rooms.get(info.roomname);
+
+          if (
+            roomtoJoin &&
+            roomtoJoin.isPrivate &&
+            roomtoJoin.password !== info.password
+          ) {
             socket.emit('error', 'mot de passe incorrect !');
-            socket.emit('go-to-room', {ok : false, roomname : ''});
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: false });
           } else if (
-            room &&
-            room.players.some((player) => player.pseudo === info.pseudo)
+            roomtoJoin &&
+            roomtoJoin.players.some((player) => player.pseudo === info.pseudo)
           ) {
             socket.emit('error', 'Le pseudo est déjà pris !');
-            socket.emit('go-to-room', {ok : false, roomname : ''});
-          } else if (room) {
-            room.players.push({
-              id: socket.id,
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: false });
+          } else if (roomtoJoin) {
+            roomtoJoin.players.push({
+              sessionId: socket.handshake.auth.sessionid,
+              actualSocketId: socket.id,
               pseudo: info.pseudo,
               owner: false,
               state: 'READY',
             });
 
-            socket.join(room.roomname);
-            socket.data.roomname = room.roomname;
-            rooms.set(room.roomname, room);
+            socket.join(roomtoJoin.roomname);
+            socket.data.joiningRoom = true;
+            rooms.set(roomtoJoin.roomname, roomtoJoin);
             //redirect on room/[id].vue
-            console.log(info.pseudo + ' join this room: ' + info.roomname)
-            socket.emit('go-to-room', {ok : true, roomname : room.roomname});
-
-            //Emit to EVERYONE rooms updated
-            io.emit('get-rooms', displayRoomsForHomePage(rooms));
-
-            //when a new player come (event for players already in room)
-            io.to(room.roomname).emit('players-updated', room.players);
+            console.info(info.pseudo + ' join this room: ' + info.roomname);
+            socket.emit('go-to-room', { ok: true });
           }
         } else {
-          //Strange comportment, it's can't be possible but purge the player.
-          leaveRoom(socket, info.roomname, rooms, io, false);
+          if (room) {
+            socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
+          }
         }
       },
     );
 
     //asked immediatly when playe entry on room/[id].vue
+    //Do a comeback logic too here.
     socket.on('i-want-room-data', () => {
-      const roomname = socket.data.roomname;
-      if (roomname && rooms.has(roomname)) {
-        const room = rooms.get(roomname)!;
+      const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
+
+      if (
+        room &&
+        (!tabAlreadyOpen || socket.data.joiningRoom)
+      ) {
+        socket.data.joiningRoom = false;
+        socket.data.roomname = room.roomname;
+        //socket.join(room.roomname)
         //players, times...
-        socket.emit('send-all-room-data', {
-          players: room.players,
-          scramble: room.actualScramble,
-          event: room.event,
+        const clientRoom: ClientRoom = {
+          roomname: room.roomname,
+          actualScramble: room.actualScramble,
           actualSolveId: room.actualSolveId,
-          allSolves: room.allSolves,
-          error:false,
+          allSolves: room.allSolves.map((solve) =>
+            convertSolveForClient(solve, room.players),
+          ),
+          event: room.event,
+          players: convertPlayersForClient(room.players),
+        };
+
+        io.to(room.roomname).emit('send-all-room-data', {
+          room: clientRoom,
+          error: false,
         });
+
+        //when a new player come (event for players already in room)
+        io.to(room.roomname).emit(
+          'players-updated',
+          convertPlayersForClient(room.players),
+        );
+        //Emit to EVERYONE rooms updated
+        io.emit('get-rooms', displayRoomsForHomePage(rooms));
       } else {
-        socket.emit('send-all-room-data', {error:true})
+        socket.emit('send-all-room-data', { error: true });
       }
     });
 
@@ -178,20 +321,27 @@ export default defineNitroPlugin((nitroApp) => {
     socket.on('leave-room', () => {
       const roomname = socket.data.roomname;
       if (roomname) {
-        leaveRoom(socket, roomname, rooms, io, false);
+        leaveRoom(socket, roomname, rooms, io);
       }
     });
 
     //When a player juste change his state (solving, inspecting...)
     socket.on('change-state', (state: PlayerState) => {
       const roomname = socket.data.roomname;
-
       if (roomname && rooms.has(roomname)) {
         const room = rooms.get(roomname)!;
-        const player = room.players.find((player) => player.id === socket.id);
+        const player = room.players.find(
+          (player) =>
+            player.sessionId === socket.handshake.auth.sessionid &&
+            player.actualSocketId === socket.id,
+        );
+
         if (player) {
           player.state = state;
-          io.to(roomname).emit('players-updated', room.players);
+          io.to(roomname).emit(
+            'players-updated',
+            convertPlayersForClient(room.players),
+          );
           rooms.set(roomname, room);
         }
       }
@@ -215,7 +365,7 @@ export default defineNitroPlugin((nitroApp) => {
             info.time,
             info.inspectionPenality,
             info.penalitySelected,
-            socket.id,
+            socket,
             info.solveId,
           );
         }
@@ -226,11 +376,11 @@ export default defineNitroPlugin((nitroApp) => {
     socket.on('update-event', async (event: EventID) => {
       const roomname = socket.data.roomname;
 
-      if (roomname && isOwner(socket.id, rooms, roomname)) {
+      if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
         room.event = event;
-        room.currentSolve = { solveId: -1 };
-        room.allSolves = [];
+        room.currentSolve = { solveId: 0 };
+        room.allSolves = [{ solveId: 0 }];
         room.actualScramble = (await randomScrambleForEvent(event)).toString();
         room.actualSolveId = 1;
         rooms.set(roomname, room);
@@ -250,10 +400,10 @@ export default defineNitroPlugin((nitroApp) => {
     //When owner clear session
     socket.on('clear-session', () => {
       const roomname = socket.data.roomname;
-      if (roomname && isOwner(socket.id, rooms, roomname)) {
+      if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
-        room.currentSolve = { solveId: -1 };
-        room.allSolves = [];
+        room.currentSolve = { solveId: 0 };
+        room.allSolves = [{ solveId: 0 }];
         room.actualSolveId = 1;
         io.to(roomname).emit('session-cleaned');
       } else {
@@ -267,12 +417,12 @@ export default defineNitroPlugin((nitroApp) => {
     //When owner ckick someone
     socket.on('kick-player', (playerToKickId: string) => {
       const roomname = socket.data.roomname;
-      if (roomname && isOwner(socket.id, rooms, roomname)) {
+      if (roomname && isOwner(socket, rooms, roomname)) {
         const kickPlayer = io.sockets.sockets.get(playerToKickId);
         //On va pas se kick soi-même quand même.
         if (kickPlayer && kickPlayer.id !== socket.id) {
           kickPlayer.leave(roomname);
-          leaveRoom(kickPlayer, roomname, rooms, io, false);
+          leaveRoom(kickPlayer, roomname, rooms, io);
           kickPlayer.emit(
             'removed',
             'Il a été décidé par le modérateur de vous exclure de la room ' +
@@ -299,7 +449,11 @@ export default defineNitroPlugin((nitroApp) => {
 
       if (roomname && rooms.has(roomname)) {
         const room = rooms.get(roomname)!;
-        const player = room.players.find((player) => player.id === socket.id);
+        const player = room.players.find(
+          (player) =>
+            player.sessionId === socket.handshake.auth.sessionid &&
+            socket.id === player.actualSocketId,
+        );
         if (player) {
           io.to(roomname).emit('get-message', {
             pseudo: player.pseudo,
