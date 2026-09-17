@@ -28,7 +28,7 @@ const corsOptions: CorsOptions = {
 const rooms: Map<string, ServerRoom> = new Map();
 
 //clean inactives players (30min after leave a room).
-const min = 0.5;
+const min = 30;
 setInterval(() => {
   console.log('------------------Rooms state log------------------');
   rooms.forEach((room) => {
@@ -76,7 +76,8 @@ setInterval(() => {
     }
   });
   console.log('------------------End Rooms state log------------------');
-}, 10000);
+  //Can purge rooms each 10 mins.
+}, 1000 * 60 * 10);
 
 export default defineNitroPlugin((nitroApp) => {
   const engine = new Engine();

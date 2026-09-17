@@ -78,7 +78,6 @@
       </template>
     </UFooter>
 
-    <UBanner color="error"></UBanner>
   </UApp>
 
 </template>
