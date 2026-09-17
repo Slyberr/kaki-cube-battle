@@ -1,13 +1,14 @@
 <template>
 
-  <UModal>
-    <UButton color="primary" variant="ghost" label="Partir de la salle" icon="lucide:arrow-left" />
+  <UModal :open="openModal">
+    <UButton color="primary" variant="ghost" label="Partir de la salle" icon="lucide:arrow-left"
+      @click="openModal = true" />
     <template #content="{ close }">
       <div class="flex flex-col p-8  gap-10 items-center justify-between">
         <p>En quittant la salle, vous perderez TOUS vos scores en cours. Partir ? </p>
         <div class="flex justify-between  w-[80%] sm:w-[50%]">
           <UButton class="w-20" label="Oui" @click="leaveRoom()" icon="lucide:check" />
-          <UButton class="w-20" label="Non" @click="close" icon="lucide:x" />
+          <UButton class="w-20" label="Non" @click="openModal = false" icon="lucide:x" />
         </div>
       </div>
     </template>
@@ -102,6 +103,8 @@ const showPage = ref<boolean>(false);
 const twistyContainer = ref<HTMLElement | null>(null);
 
 const disconnectBanner = ref<boolean>(false);
+const openModal = ref<boolean>(false);
+const canLeave = ref<boolean>(false);
 
 const dropDownMenuEnabled = computed(() => room.players.every((player) => player.state === 'READY'));
 const dropDownItems = computed((): DropdownMenuItem[][] => {
@@ -129,7 +132,6 @@ onMounted(() => {
   socket.on('disconnect', () => {
     disconnectBanner.value = true;
   });
-
 
   socket.on('send-all-room-data', async (info: { room: ClientRoom, error: boolean }) => {
     if (!info.error) {
@@ -168,12 +170,14 @@ onMounted(() => {
 
     } else {
       //It's happend when a user comeback to page with next arrow navigation.
+      //Leave room continue on OnBeforeRouteLeave()
+      canLeave.value = true;
       toast.add({
         title: 'Impossible de rejoindre !',
         description: 'Vous ne pouvez pas rejoindre une salle par URL, même publique.',
         duration: 5000
       })
-      await navigateTo('/home');
+      return navigateTo('/home');
     }
   });
   //new player just come / someone change his state
@@ -218,13 +222,13 @@ onMounted(() => {
       me.state = newMe.state;
     }
 
-     if (me.owner && !wasOwner) {
-        toast.add({
-          title: 'Le modérateur de salle est parti.',
-          description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
-          duration: 5000
-        })
-      }
+    if (me.owner && !wasOwner) {
+      toast.add({
+        title: 'Le modérateur de salle est parti.',
+        description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
+        duration: 5000
+      })
+    }
   });
 
   //When all players finishs
@@ -279,10 +283,31 @@ const sendTime = (time: number, inspectionPenality: string, penalitySelected: st
   room.actualScramble = 'Attente des autres joueurs...';
 };
 
-const leaveRoom = () => {
-  socket.emit("leave-room");
-  return navigateTo("/home?return=yes");
+//Leave room continue on OnBeforeRouteLeave()
+const leaveRoom = async () => {
+  openModal.value = false;
+  canLeave.value = true;
+  return navigateTo('/home');
+ 
 };
+
+onBeforeRouteLeave((to, from) => {
+  //when click on yes to leave
+  if (canLeave.value) {
+    if (room.roomname) {
+      socket.emit("leave-room");
+    }
+    return true;
+  }
+
+  //Block when modal is opened
+  if (room.roomname) {
+    openModal.value = true;
+    return false
+  }
+
+  return '/home';
+})
 
 const changeState = (state: PlayerState) => {
   socket.emit('change-state', state);
