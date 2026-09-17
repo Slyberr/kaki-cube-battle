@@ -62,7 +62,7 @@ export const saveTime = async (
       io.to(roomname).emit('players-updated', convertPlayersForClient(room.players));
 
       //If everyone in this room submit his time  (some players can be not here because can comeback)
-      if (room.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (player.actualSocketId === undefined))) {
+      if (room.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (!player.actualSocketId))) {
         everyoneScored(rooms,roomname,io);
       } 
     }

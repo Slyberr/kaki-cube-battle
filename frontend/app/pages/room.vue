@@ -12,7 +12,8 @@
       </div>
     </template>
   </UModal>
-
+  <UBanner v-if="disconnectBanner" icon="lucide:unplug" class="bg-error/30"
+    title="Attention, vous avez été déconnecté. Rechargez la page !" />
   <div class="flex flex-col">
 
     <div v-if="me && room" class="flex flex-col items-center gap-4 w-full">
@@ -100,6 +101,8 @@ const showPage = ref<boolean>(false);
 
 const twistyContainer = ref<HTMLElement | null>(null);
 
+const disconnectBanner = ref<boolean>(false);
+
 const dropDownMenuEnabled = computed(() => room.players.every((player) => player.state === 'READY'));
 const dropDownItems = computed((): DropdownMenuItem[][] => {
   return useGetDropDownMenu(
@@ -123,7 +126,12 @@ onMounted(() => {
   //emit on onMounted i-want-room-data to get data.
   socket.emit('i-want-room-data');
 
-  socket.on('send-all-room-data', async(info: { room: ClientRoom, error: boolean }) => {
+  socket.on('disconnect', () => {
+    disconnectBanner.value = true;
+  });
+
+
+  socket.on('send-all-room-data', async (info: { room: ClientRoom, error: boolean }) => {
     if (!info.error) {
       showPage.value = true;
       room.players = info.room.players;
@@ -160,23 +168,34 @@ onMounted(() => {
 
     } else {
       //It's happend when a user comeback to page with next arrow navigation.
-       toast.add({
-          title: 'Impossible de rejoindre !',
-          description: 'Vous ne pouvez pas rejoindre une salle par URL, même publique.',
-          duration: 5000
-        })
+      toast.add({
+        title: 'Impossible de rejoindre !',
+        description: 'Vous ne pouvez pas rejoindre une salle par URL, même publique.',
+        duration: 5000
+      })
       await navigateTo('/home');
     }
   });
   //new player just come / someone change his state
   socket.on('players-updated', (players: ClientPlayer[]) => {
     if (players) {
+      const wasOwner = me.owner;
+
       room.players = players;
       const tempMe = players.find((player) => player.socketId === socket.id)!
       me.owner = tempMe.owner;
       me.pseudo = tempMe.pseudo;
       me.socketId = tempMe.socketId;
       me.state = tempMe.state;
+
+      if (me.owner && !wasOwner) {
+        toast.add({
+          title: 'Le modérateur de salle est parti.',
+          description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
+          duration: 5000
+        })
+      }
+
     }
   });
 
@@ -197,15 +216,15 @@ onMounted(() => {
       me.pseudo = newMe.pseudo;
       me.socketId = newMe.socketId;
       me.state = newMe.state;
+    }
 
-      if (me.owner && wasOwner === false) {
+     if (me.owner && !wasOwner) {
         toast.add({
           title: 'Le modérateur de salle est parti.',
           description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
           duration: 5000
         })
       }
-    }
   });
 
   //When all players finishs

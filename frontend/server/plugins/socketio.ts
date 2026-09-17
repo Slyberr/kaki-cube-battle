@@ -36,8 +36,8 @@ setInterval(() => {
     if (room.players.length > 0) {
       room.players.forEach((player) => {
         if (
-          player.actualSocketId === undefined &&
-          player.expiration !== undefined &&
+          !player.actualSocketId &&
+          player.expiration &&
           isSessionExpired(player.expiration, min)
         ) {
           //Purge times
@@ -51,11 +51,13 @@ setInterval(() => {
           );
         }
       });
+
       //purge players
       room.players = room.players.filter(
         (player) => !playerToPurge.includes(player.sessionId),
       );
     }
+
     if (room.players.length === 0) {
       //Room empty not deleted because the last one just close tab
       rooms.delete(room.roomname);
@@ -91,8 +93,6 @@ export default defineNitroPlugin((nitroApp) => {
 
       //Comeback logic
       if (room && !tabAlreadyOpen) {
-       
-
         //can come back if roomOfsession() affect a the new socketID.
         const player = room.players.find(
           (player) =>
@@ -101,18 +101,21 @@ export default defineNitroPlugin((nitroApp) => {
         );
 
         if (player) {
+          if (!room.players.find((player) => player.owner)) {
+            //all was disconnected or room was empty.
+            player.owner = true;
+          }
+
           player.expiration = undefined;
           socket.data.roomname = room.roomname;
-          socket.data.joiningRoom = true
-          
-          socket.join(room.roomname);
+          socket.data.joiningRoom = true;
 
+          socket.join(room.roomname);
 
           rooms.set(room.roomname, room);
           socket.emit('go-to-room', { ok: true });
           io.emit('get-rooms', displayRoomsForHomePage(rooms));
         }
-
       } else {
         if (tabAlreadyOpen) {
           socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
@@ -138,7 +141,20 @@ export default defineNitroPlugin((nitroApp) => {
             player.sessionId === socket.handshake.auth.sessionid
           ) {
             player.actualSocketId = undefined;
+            if (player.owner) {
+              player.owner = false;
+                room.players.find((player2)=> { 
+                if (player2.actualSocketId  && !player2.owner ) { 
+                  player2.owner = true; 
+                  return true;
+                } else {
+                  return false;
+                }
+              })
+            }
+            
             socket.leave(room.roomname);
+        
             player.expiration = Date.now();
             rooms.set(room.roomname, room);
           }
@@ -156,7 +172,7 @@ export default defineNitroPlugin((nitroApp) => {
           room.players.every(
             (player) =>
               (player.state === 'SCORED' && player.actualSocketId) ||
-              player.actualSocketId === undefined,
+              !player.actualSocketId,
           ) &&
           room.players.some((player) => player.actualSocketId)
         ) {
@@ -266,16 +282,8 @@ export default defineNitroPlugin((nitroApp) => {
 
       if (
         room &&
-        (tabAlreadyOpen === false || socket.data.joiningRoom === true)
+        (!tabAlreadyOpen || socket.data.joiningRoom)
       ) {
-        //when a new player come (event for players already in room)
-        io.to(room.roomname).emit(
-          'players-updated',
-          convertPlayersForClient(room.players),
-        );
-        //Emit to EVERYONE rooms updated
-        io.emit('get-rooms', displayRoomsForHomePage(rooms));
-
         socket.data.joiningRoom = false;
         socket.data.roomname = room.roomname;
         //socket.join(room.roomname)
@@ -295,6 +303,14 @@ export default defineNitroPlugin((nitroApp) => {
           room: clientRoom,
           error: false,
         });
+
+        //when a new player come (event for players already in room)
+        io.to(room.roomname).emit(
+          'players-updated',
+          convertPlayersForClient(room.players),
+        );
+        //Emit to EVERYONE rooms updated
+        io.emit('get-rooms', displayRoomsForHomePage(rooms));
       } else {
         socket.emit('send-all-room-data', { error: true });
       }

@@ -78,6 +78,7 @@
       </template>
     </UFooter>
 
+    <UBanner color="error"></UBanner>
   </UApp>
 
 </template>
@@ -137,9 +138,8 @@ onMounted(() => {
       description: data,
 
     });
-    return navigateTo("/home?return=yes");
+    return navigateTo("/home");
   });
-
 });
 
 onBeforeUnmount(() => {

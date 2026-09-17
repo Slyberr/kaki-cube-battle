@@ -77,7 +77,7 @@ export const leaveRoom = (
     io.emit('get-rooms', displayRoomsForHomePage(rooms));
 
     //special case : everyone submit his time but last one disconnected.
-    if (roomToManage.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (player.actualSocketId === undefined))) {
+    if (roomToManage.players.every((player)=> (player.state === 'SCORED' && player.actualSocketId) || (!player.actualSocketId))) {
       everyoneScored(rooms,roomname,io);
     } 
 

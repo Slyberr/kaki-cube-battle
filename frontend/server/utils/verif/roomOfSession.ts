@@ -18,7 +18,7 @@ export const roomOfSession = (socket : Socket,rooms : Map<string,ServerRoom>) : 
     if (playerInRoom)  {
       roomOfPlayer = room;
       //Player try to come back, affect a the new socket.id
-      if (playerInRoom.actualSocketId === undefined) {
+      if (!playerInRoom.actualSocketId) {
         playerInRoom.actualSocketId = socket.id;
         playerInRoom.state = 'READY';
         isTabAlreadyOpen = false;

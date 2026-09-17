@@ -65,7 +65,7 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
             cell: ({ row }) => {
 
                 return h('div', { class: `${isBestSolveTime(row, player.socketId) ? 'text-primary-500' : 'text-gray-100'}` }, () => {
-                    if (row.getValue(player.socketId) !== undefined) {
+                    if (row.getValue(player.socketId)) {
                         const obj = row.getValue(player.socketId) as { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' };
                         const timeReadable = timeForHuman(obj.time);
                         if (obj.finalPenality === 'DNF') {
@@ -141,7 +141,7 @@ const mean = (playerId: string) => {
 
 const currentAvg = (avgOf: 5 | 12, playerId: string) => {
 
-    if (props.times.filter((solve) => solve[playerId] !== undefined).length >= avgOf) {
+    if (props.times.filter((solve) => solve[playerId]).length >= avgOf) {
         const lastSolves = props.times.slice(0, avgOf);
         const nbOfDNF = lastSolves.filter((solve: any) => (solve[playerId].finalPenality === 'DNF')).length;
         if (nbOfDNF > 1) {

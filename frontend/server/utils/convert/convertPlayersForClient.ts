@@ -12,7 +12,7 @@ export const convertPlayersForClient = (players: ServerPlayer[]) : ClientPlayer[
     for (const player of players) {
          
         //avois player who's not here (session persistance on server)
-        if (player.actualSocketId !== undefined) {
+        if (player.actualSocketId) {
             clientplayers.push({
                 socketId : player.actualSocketId,
                 owner : player.owner,
