@@ -13,7 +13,8 @@
       <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[405px]:flex-col max-[405px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <div class="flex flex-row gap-4">
-          <UButton icon="lucide:rotate-ccw" variant="outline" @click="retry" />
+          <UButton icon="lucide:rotate-ccw" variant="outline" :disabled="timer.state === 'WAITING_OTHER'"
+            @click="retry" />
           <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
             :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
             indicator="hidden" orientation="horizontal">
@@ -127,7 +128,7 @@ onMounted(() => {
   window.addEventListener('keydown', onKeyDownEnter);
   //For mobile and tablets.
   document.getElementById('timer')!.addEventListener('touchend', timerUpManager);
-  document.getElementById('timer')!.addEventListener('touchstart', timerDownManager);
+  window.addEventListener('touchstart', timerDownManager);
   document.getElementById('timer')!.addEventListener('contextmenu', handlecontextMenu);
 });
 
@@ -150,8 +151,18 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
       return;
     }
   }
+
   //Keyboard mode accept only touch + spacebar on pc.
-  if (props.inputMode === 'KEYBOARD' && (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))) {
+  if (props.inputMode === 'KEYBOARD' &&
+    (
+      (!(event instanceof KeyboardEvent) &&
+        (event.target as HTMLElement).closest('#timer') !== null
+      ) ||
+      (event instanceof KeyboardEvent &&
+        event.code === 'Space'
+      )
+    )
+  ) {
 
     switch (timer.state) {
       case 'BEGIN_STATE':
@@ -175,6 +186,7 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
   }
 
   //Timer can be stopped by any key.
+  //On mobile/tablet, timer can be stopped ANYWHERE 
   if (timer.state === 'RUNNING' && props.inputMode === 'KEYBOARD') {
     clearInterval(timerIntervalId.value);
     //Save a initial 'toHuman' state before modifie timeDisplayed with the penalities.
