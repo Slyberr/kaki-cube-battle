@@ -395,11 +395,12 @@ const saveTime = () => {
       } else {
 
         const time = inputTimeToTimestamp(timeFormated);
-        manualTime.input = '';
-        manualTime.disabled = true;
-        inspectionValue.value = 15;
+
         emits('time-sended', time, 'NONE', 'NONE');
       }
+      manualTime.input = '';
+      manualTime.disabled = true;
+      inspectionValue.value = 15;
       timer.state = 'WAITING_OTHER';
       inspectionPenality.value = 'NONE';
     } else {
