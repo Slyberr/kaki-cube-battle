@@ -26,7 +26,7 @@
         <div class="absolute top-22 flex justify-center w-full">
           <p
             class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
-            {{ room.actualScramble }}</p>
+            {{ scrambleLabel }}</p>
         </div>
         <div class="flex justify-center w-full" :class="me.owner ? 'pt-34' : 'pt-42'">
           <Timer :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
@@ -83,6 +83,7 @@ const room = reactive<ClientRoom>(
     event: '333'
   }
 );
+const scrambleLabel = ref<String>('');
 const me = reactive<ClientPlayer>({
   owner: false,
   pseudo: 'Error',
@@ -140,6 +141,7 @@ onMounted(() => {
       room.actualScramble = info.room.actualScramble;
       room.event = info.room.event;
       room.roomname = info.room.roomname;
+      scrambleLabel.value = room.actualScramble;
 
       if (room.players.length > 0) {
 
@@ -245,6 +247,7 @@ onMounted(() => {
 
     //Refresh scramble
     room.actualScramble = data.scramble;
+    scrambleLabel.value = room.actualScramble
     if (drawer.value) {
       drawer.value.alg = room.actualScramble;
     }
@@ -258,6 +261,7 @@ onMounted(() => {
     if (eventInfo) {
       puzzle.value = eventInfo.toDisplay;
       room.actualScramble = info.scramble;
+      scrambleLabel.value = room.actualScramble;
 
       room.allSolves = [{ solveId: 0 }];
       room.actualSolveId = 1;
@@ -280,7 +284,7 @@ onMounted(() => {
 const sendTime = (time: number, inspectionPenality: string, penalitySelected: string) => {
   socket.emit('save-time', { time: time, inspectionPenality: inspectionPenality, penalitySelected: penalitySelected, solveId: room.actualSolveId });
   localPlayerState.value = 'SCORED';
-  room.actualScramble = 'Attente des autres joueurs...';
+  scrambleLabel.value = 'Attente des autres joueurs...';
 };
 
 //Leave room continue on OnBeforeRouteLeave()
@@ -312,7 +316,11 @@ onBeforeRouteLeave((to, from) => {
 const changeState = (state: PlayerState) => {
   socket.emit('change-state', state);
   if (state === 'CONFIRMATION') {
-    room.actualScramble = 'Confirmation du temps...';
+    scrambleLabel.value = 'Confirmation du temps...';
+  } 
+  //Retry case
+  if (state === 'READY') {
+    scrambleLabel.value = room.actualScramble;
   }
 }
 
@@ -325,6 +333,4 @@ onBeforeUnmount(() => {
   socket.off("event-updated");
   socket.off("session-cleaned");
 })
-
-
 </script>
