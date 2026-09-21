@@ -186,7 +186,7 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
   }
 
   //Timer can be stopped by any key.
-  //On mobile/tablet, timer can be stop ANYWHERE 
+  //On mobile/tablet, timer can be stopped ANYWHERE 
   if (timer.state === 'RUNNING' && props.inputMode === 'KEYBOARD') {
     clearInterval(timerIntervalId.value);
     //Save a initial 'toHuman' state before modifie timeDisplayed with the penalities.
