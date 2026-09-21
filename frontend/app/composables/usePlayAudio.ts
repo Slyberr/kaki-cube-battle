@@ -6,10 +6,24 @@
 
 /**
  * Play a song for inspection
- * @param audio 
+ * @param audios audios can play (8,12)
+ * @param inspectionTime (actual inspection time)
  */
-export const usePlayAudio = async(audio : HTMLAudioElement) => {
-    audio.currentTime = 0;
-    audio.volume = 1;
-    await audio.play();
+export const usePlayAudio = async (
+  inspectionTime: number,
+  audios: (HTMLAudioElement | string)[],
+) => {
+  if (inspectionTime === 7 && audios.length === 4) {
+   
+    (audios[2]! as HTMLAudioElement).currentTime = 0;
+    (audios[2]! as HTMLAudioElement).volume = 1;
+    await (audios[2]! as HTMLAudioElement).play();
+  }
+
+  if (inspectionTime === 3 && audios.length === 4) {
+  
+    (audios[3]! as HTMLAudioElement).currentTime = 0;
+    (audios[3]! as HTMLAudioElement).volume = 1;
+    await (audios[3]! as HTMLAudioElement).play();
+  }
 };
