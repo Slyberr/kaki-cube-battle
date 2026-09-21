@@ -10,12 +10,17 @@
         {{
           timer.timeDisplayed }}</div>
 
-      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[400px]:flex-col max-[400px]:items-center"
+      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[405px]:flex-col max-[405px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
-        <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
-          :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
-          indicator="hidden" orientation="horizontal">
-        </URadioGroup>
+        <div class="flex flex-row gap-4">
+          <UButton icon="lucide:rotate-ccw" variant="outline" :disabled="timer.state === 'WAITING_OTHER'"
+            @click="retry" />
+          <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
+            :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
+            indicator="hidden" orientation="horizontal">
+          </URadioGroup>
+        </div>
+
         <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :disabled="!onConfirmTouchUp"
           :label="buttonLabel" @click="saveTime" />
       </div>
@@ -36,7 +41,8 @@
             <UInput v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
               maxlength="6" :disabled="manualTime.disabled" />
           </UFormField>
-          <UButton type="submit" class="text-xs" label="OK"></UButton>
+          <UButton type="submit" class="text-xs" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel">
+          </UButton>
         </UForm>
         <p>{{ "Votre temps est : " + isTimeFormatOk(manualTime.input)[1] }}</p>
 
@@ -122,12 +128,15 @@ onMounted(() => {
   window.addEventListener('keydown', onKeyDownEnter);
   //For mobile and tablets.
   document.getElementById('timer')!.addEventListener('touchend', timerUpManager);
-  document.getElementById('timer')!.addEventListener('touchstart', timerDownManager);
+  window.addEventListener('touchstart', timerDownManager);
   document.getElementById('timer')!.addEventListener('contextmenu', handlecontextMenu);
 });
 
-//UTILS don't want to make a utils/UseKeyXSpaceManager beacause lot of variables to send.
 
+/**
+ * When spapce key/finger on mobile is press (any key if the timer is stopped = solve finished)
+ * @param event 
+ */
 const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
 
   //exit if it's the tchat input or feedback form -> can make whitespace.
@@ -142,8 +151,18 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
       return;
     }
   }
+
   //Keyboard mode accept only touch + spacebar on pc.
-  if (props.inputMode === 'KEYBOARD' && (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))) {
+  if (props.inputMode === 'KEYBOARD' &&
+    (
+      (!(event instanceof KeyboardEvent) &&
+        (event.target as HTMLElement).closest('#timer') !== null
+      ) ||
+      (event instanceof KeyboardEvent &&
+        event.code === 'Space'
+      )
+    )
+  ) {
 
     switch (timer.state) {
       case 'BEGIN_STATE':
@@ -167,6 +186,7 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
   }
 
   //Timer can be stopped by any key.
+  //On mobile/tablet, timer can be stopped ANYWHERE 
   if (timer.state === 'RUNNING' && props.inputMode === 'KEYBOARD') {
     clearInterval(timerIntervalId.value);
     //Save a initial 'toHuman' state before modifie timeDisplayed with the penalities.
@@ -189,6 +209,10 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
 
 }
 
+/**
+ * when space key/finger on mobile is release
+ * @param event 
+ */
 const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
   //exit if it's the tchat input or feedback form -> can make whitespace.
   if ((event.target as HTMLElement).tagName === 'INPUT' || (event.target as HTMLElement).tagName === 'TEXTAREA') {
@@ -246,16 +270,14 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
 
   //Timer can be stopped by any key.
   if (timer.state === 'CONFIRM' && props.inputMode === 'KEYBOARD') {
-
     //User touch up screen so is safe to unlock button after 0.3s.
     if (!onConfirmTouchUp.value) {
       setTimeout(() => {
         onConfirmTouchUp.value = true;
+        inspectionValue.value = 15;
       }, 300);
     }
-
   }
-
 
   if (props.inputMode === 'MANUALLY' &&
     (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))
@@ -278,9 +300,13 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
   }
 }
 
+/**
+ * When enter is pressed.
+ * @param event 
+ */
 const onKeyDownEnter = (event: KeyboardEvent) => {
 
-  //1 work withe enter && enternumpad
+  //1 work with enter && enternumpad
   //2. On keyboard OR on Manually + inspection ? -> state CONFIRM.;
   //3. On manually + no inspection ? -> begin State
   //4. The event could be trigger on Input ChatBox, we prevent this.
@@ -295,10 +321,14 @@ const onKeyDownEnter = (event: KeyboardEvent) => {
   }
 };
 
+/**
+ * Block the context menu on tablet/mobile.
+ * @param e 
+ */
 const handlecontextMenu = (e: Event) => e.preventDefault();
 
 /**
- * code to create Inspection with penalities (+2 and DNF) or not if manual.
+ * Buisness logic of inspection.
  */
 const beginInspection = () => {
   timer.state = 'INSPECTION';
@@ -310,17 +340,7 @@ const beginInspection = () => {
       if (inspectionValue.value > 0) {
         inspectionValue.value--;
         timer.timeDisplayed = inspectionValue.value.toString();
-
-        if (inspectionValue.value === 7 && props.audios.length === 4) {
-          // @ts-expect-error
-          await usePlayAudio(props.audios[2]);
-        }
-
-        if (inspectionValue.value === 3 && props.audios.length === 4) {
-          // @ts-expect-error
-          await usePlayAudio(props.audios[3]);
-        }
-
+        usePlayAudio(inspectionValue.value, props.audios);
       } else if (inspectionValue.value <= 0 && inspectionValue.value > -2) {
         inspectionValue.value--;
         timer.timeDisplayed = '+2';
@@ -337,19 +357,8 @@ const beginInspection = () => {
     timer.timeDisplayed = inspectionValue.value.toString();
     inspectionId.value = setInterval(async () => {
       if (inspectionValue.value > 0) {
-
         inspectionValue.value--;
-        if (inspectionValue.value === 7 && props.audios.length === 4) {
-          // @ts-expect-error
-          await usePlayAudio(props.audios[2]);
-        }
-
-        if (inspectionValue.value === 3 && props.audios.length === 4) {
-          // @ts-expect-error
-          await usePlayAudio(props.audios[3]);
-        }
-
-
+        usePlayAudio(inspectionValue.value, props.audios);
         timer.timeDisplayed = inspectionValue.value.toString();
       } else {
         timer.state = 'CONFIRM';
@@ -360,19 +369,20 @@ const beginInspection = () => {
   }
 };
 
+/**
+ * Buisness logic when time is confirmed.
+ */
 const saveTime = () => {
   if (props.inputMode === 'KEYBOARD') {
     onConfirmTouchUp.value = false;
     buttonLabel.value = "En attente des joueurs";
-    timer.state = 'WAITING_OTHER';
 
-    inspectionValue.value = 15;
     if (penalitySelected.value === 'PLUS_2') {
       timer.realTime += 2000;
     }
-
     //save timestamp -> treatement for human in cells.
     emits('time-sended', timer.realTime, inspectionPenality.value, penalitySelected.value);
+    timer.state = 'WAITING_OTHER';
     inspectionPenality.value = 'NONE';
   }
 
@@ -380,25 +390,19 @@ const saveTime = () => {
     const [isOk, timeFormated] = isTimeFormatOk(manualTime.input);
 
     if (isOk) {
-      let time = 0;
-      if (timeFormated !== 'DNF') {
-        let min = 0;
-        //max length for sec example :  15.20 = 5
-        let isMinTime: boolean = timeFormated.length > 5;
-        if (isMinTime) {
-          const arrayOfTime = timeFormated.split(':');
-          min = parseFloat(arrayOfTime[0]!) * 60000;
-          time = min + parseFloat(arrayOfTime[1]!) * 1000;
-        } else {
-          time = parseFloat(timeFormated) * 1000;
-        }
+      if (timeFormated === 'DNF') {
+        emits('time-sended', 0, 'NONE', 'DNF');
+      } else {
+
+        const time = inputTimeToTimestamp(timeFormated);
+
+        emits('time-sended', time, 'NONE', 'NONE');
       }
-      timer.state = 'WAITING_OTHER';
-      inspectionPenality.value = 'NONE';
-      inspectionValue.value = 15;
       manualTime.input = '';
       manualTime.disabled = true;
-      emits('time-sended', time, 'NONE', timeFormated === 'DNF' ? 'DNF' : 'NONE');
+      inspectionValue.value = 15;
+      timer.state = 'WAITING_OTHER';
+      inspectionPenality.value = 'NONE';
     } else {
 
       toast.add({
@@ -409,6 +413,18 @@ const saveTime = () => {
     }
   }
 };
+
+/**
+ * Redo a time
+ */
+const retry = () => {
+  timer.state = 'BEGIN_STATE';
+  timer.realTime = 0.00;
+  timer.timeDisplayed = '0.00';
+  timer.timeFormated = '0.00';
+  emits('playerChangeState', 'READY');
+}
+
 
 /**
  * if the keyup is triggered before x second, do nothing. Else, the timer will start.
@@ -422,7 +438,7 @@ const timerHoldingBeforeGo = () => {
   }, props.readyHoldingTime * 1000);
 };
 
-//Triggered when all player submit the time on server.
+//Triggered when all player submit the time on server (next solve).
 watch(() => props.localPlayerState, async (newState, oldState) => {
   if (oldState !== newState && newState == 'READY') {
     timer.timeDisplayed = '0.00';
@@ -433,6 +449,9 @@ watch(() => props.localPlayerState, async (newState, oldState) => {
   }
 });
 
+/**
+ * Logic of radios buttons.
+ */
 watch(() => penalitySelected.value, async (newVal) => {
   //If DNF at Inspection : No button enabled (DNF value is selected).
   if (inspectionPenality.value !== 'DNF') {
