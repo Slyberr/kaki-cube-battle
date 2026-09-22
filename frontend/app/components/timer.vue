@@ -13,7 +13,7 @@
       <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[405px]:flex-col max-[405px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <div class="flex flex-row gap-4">
-          <UButton icon="lucide:rotate-ccw" variant="outline" :disabled="timer.state === 'WAITING_OTHER'"
+          <UButton icon="lucide:rotate-ccw" variant="outline" :disabled="timer.state === 'WAITING_OTHER' || !onConfirmTouchUp"
             @click="retry" />
           <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
             :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
@@ -110,11 +110,12 @@ const timerIntervalId = ref<NodeJS.Timeout>();
 const holdingSpaceId = ref<NodeJS.Timeout>();
 const inspectionId = ref<NodeJS.Timeout>();
 
-const penalitySelected = ref<Penality>('NONE');
+
 const buttonLabel = ref<string>('Confirmer');
 
 const inspectionValue = ref<number>(15);
 const inspectionPenality = ref<Penality>('NONE');
+const penalitySelected = ref<Penality>('NONE');
 
 const onConfirmTouchUp = ref<boolean>(false);
 
@@ -422,6 +423,10 @@ const retry = () => {
   timer.realTime = 0.00;
   timer.timeDisplayed = '0.00';
   timer.timeFormated = '0.00';
+  inspectionValue.value = 15;
+  inspectionPenality.value = 'NONE';
+  penalitySelected.value = 'NONE';
+  onConfirmTouchUp.value = false;
   emits('playerChangeState', 'READY');
 }
 
