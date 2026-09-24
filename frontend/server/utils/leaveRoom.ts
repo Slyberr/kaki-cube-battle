@@ -44,10 +44,8 @@ export const leaveRoom = (
 
     roomToManage.players = roomNoLeaver;
 
-    //performance + when user leave room but not disconnect.
-    // socketID is same : maybe next feature, score will stay if come back. Actually, i don't want this.
-    roomToManage.allSolves.forEach((time) => {
-      delete time[mySocket.id];
+    roomToManage.allSolves.forEach((solve) => {
+      delete solve[mySocket.handshake.auth.sessionid];
     });
 
     if (roomToManage.players.length < 1) {

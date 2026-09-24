@@ -44,16 +44,16 @@ export const saveTime = async (
       }
 
       if (inspectionPenality === 'DNF' || penalitySelected === 'DNF' ) {
-        room.currentSolve[player.sessionId] = {time : time,finalPenality : 'DNF'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : 'DNF',win: false};
         
       } else if (inspectionPenality === 'PLUS_2' && penalitySelected === 'PLUS_2') {
-        room.currentSolve[player.sessionId] = {time : time,finalPenality : '+4'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : '+4',win: false};
         
       } else if (inspectionPenality === 'PLUS_2' || penalitySelected === 'PLUS_2') {
-        room.currentSolve[player.sessionId] = {time : time,finalPenality : '+2'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : '+2',win: false};
       
       } else {
-        room.currentSolve[player.sessionId] = {time : time,finalPenality : 'OK'};
+        room.currentSolve[player.sessionId] = {time : time,finalPenality : 'OK',win: false};
       }
 
       player.state = 'SCORED';

@@ -8,6 +8,7 @@ import { Server } from 'socket.io';
 import { randomScrambleForEvent } from 'cubing/scramble';
 import { ServerPlayer, ServerRoom } from '../type';
 import { convertSolveForClient } from './convert/convertSolveForClient';
+import { setBestTime } from './verif/setBestTime';
 
 /**
  * Buisness logic when everyone in the room scored. 
@@ -27,6 +28,7 @@ export const everyoneScored = async (
       await randomScrambleForEvent(room?.event ?? '333')
     ).toString();
 
+    setBestTime(room.currentSolve);
 
     //Each new row is the first row.
     room.allSolves.unshift(room.currentSolve);
