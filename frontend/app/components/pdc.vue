@@ -1,5 +1,5 @@
 <template>
-    <p >La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 17 sept 2026).</p>
+    <p >La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 24 sept 2026).</p>
     <div class="text-muted">
         <div class="text-lg">1/ Motivation sur la vie privée et les données </div>
         <p class="text-xs">
@@ -80,7 +80,7 @@
             vous essayer de revenir sur kakicube.com. Vos scores restent alors intacts.
             <br />
             <br />
-            La persistance de session est gérée grâce à le stockage d'un identifiant (UUID) de session locale sur votre navigateur.
+            La persistance de session est gérée grâce à le stockage d'un identifiant (UUID) dans le stockage local sur votre navigateur.
             Cela est utilisé exclusivement pour le fonctionnement des salles de jeux de kakicube.com.
             <br />
             Une fois la session expiré, (car vous n'avez pas essayé de vous reconnecter avant le temps imparti) l'identifiant de session est toujours 
@@ -88,8 +88,8 @@
 
         </p>
         <br />
-        <div class="text-sm">2.2.1/ Supprimer l'identifiant de session locale</div>
-        <p class="text-xs">Pour supprimer l'indentifiant de session locale, vous pouvez ouvrir l'inspecteur de votre navigateur (F12) puis rechercher l'onglet 'stockage'.
+        <div class="text-sm">2.2.1/ Supprimer les variables du stockage local</div>
+        <p class="text-xs">Pour supprimer l'indentifiant de stockage local, vous pouvez ouvrir l'inspecteur de votre navigateur (F12) puis rechercher l'onglet 'stockage'.
             Vous verez alors la section 'Stockage local' (le nom peut différer selon votre navigateur et votre langue), dérouler et trouvez 'kakicube.com'.
             Vous vous retrouvez la variable 'keep-session' qui sert justement à cet usage et nuxt-color-mode, qui permet de stocker votre préférence de thème sombre ou clair.
             Une icone indiquera que vous pouvez supprimer toutes les variables.

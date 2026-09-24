@@ -1,5 +1,5 @@
 <template>
-    <p>Les CGU pourraient évoluer, veuillez les lire attentivement.(Dernière maj : 17 sept 2026)</p>
+    <p>Les CGU pourraient évoluer, veuillez les lire attentivement.(Dernière maj : 24 sept 2026)</p>
     <div class="text-muted">
 
         <p class="text-lg">1/ Objectif de Kaki Cube VS</p>
@@ -49,19 +49,28 @@
         <p class="text-xs">
             La persistance de session est stocké dans une variable dans votre navigateur.
             Si vous partez, votre session devient expirable au bout de 30 minutes, à moins que vous reveniez avant.
-            Au maximum, votre session peut durer 40 minutes car le serveur vérifie toutes les 10 minutes s'il faut purger certaines salles.
+            Au maximum, votre session peut durer 40 minutes car le serveur vérifie toutes les 10 minutes s'il faut
+            purger certaines salles.
             <br />
             <br />
-            Il n'est pas possible d'ouvrir plusieurs onglets pour avoir plusieurs parties en cours. Pour contourner, vous pouvez :
+            Il n'est pas possible d'ouvrir plusieurs onglets pour avoir plusieurs parties en cours. Pour contourner,
+            vous pouvez :
         </p>
         <ul class="text-xs">
             <li>- Lancer une autre page de votre navigateur en navigation privée.</li>
             <li>- Lancer une autre page sur un navigateur différent.</li>
         </ul>
-
-        
         <br />
-        <p class="text-xs">Pour plus d'informations concernant le stockage local et savoir comment le supprimer, veuillez consultez la section 2.2/ de la politique de confidentialité.</p>
+        <p class="text-md">2.3/Persistance de paramétrage </p>
+        <p class="text-xs">
+            Depuis la version 1.1.3 de Kaki Cube, une nouvelle variable de stockage local est apparue : 'options'.
+            Elle a pour but de sauvegarder vos options préférées (Son pour l'inspection, mode de saisie...).
+        </p>
+
+        <br />
+        <p class="text-md">Pour plus d'informations concernant le stockage local et savoir comment le supprimer,
+            veuillez consultez la section 2.2/ de la politique de confidentialité.</p>
+        <br />
         <p class="text-lg">3/ Donations via Buy me a Coffee ©</p>
         <p class="text-md">3.1/ Affirmations à respecter avant de donner.</p>
         <p class="text-xs">

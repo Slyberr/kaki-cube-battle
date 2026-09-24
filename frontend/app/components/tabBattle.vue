@@ -1,6 +1,6 @@
 <template>
     <UTable sticky class="h-60 md:h-60 lg:h-70 xl:h-90 2xl:h-110 mx-2 border border-gray-400 rounded-sm"
-        :columns="colonnes" :data="props.times" />
+        :columns="colonnes" :data="props.solves" />
 </template>
 
 
@@ -13,12 +13,15 @@
 
 import { timeForHuman } from '#imports';
 import type { TableColumn, TableRow } from '@nuxt/ui'
+import type { PlayerTime } from '~~/shared/types/solve';
 
-const props = defineProps<{ players: ClientPlayer[], times: Solve[], solveId: number, me: ClientPlayer }>()
+const props = defineProps<{ players: ClientPlayer[], solves: Solve[], solveId: number, me: ClientPlayer }>()
 
 
 const colonnes = computed<TableColumn<Solve>[]>(() => {
 
+    //For every refresh, wins need to be reset.
+   
     const mainColumns: TableColumn<Solve>[] = [
         {
             accessorKey: 'solveId',
@@ -29,9 +32,8 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
                 }
             },
         },
-
     ];
-
+    
     for (let player of props.players) {
         mainColumns.push({
             accessorKey: player.socketId,
@@ -46,11 +48,11 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
                 return h('div', { class: 'flex justify-center' },
                     [h('div', { class: 'text-center flex flex-col' }, [
                         
-                        h('span', { class: player.socketId === props.me.socketId ? 'text-primary' : 'text-gray-100' }, player.socketId === props.me.socketId ? 'Vous' : pseudo),
+                        h('span', { class: player.socketId === props.me.socketId ? 'text-primary' : 'text-gray-100' }, (player.socketId === props.me.socketId ? 'Vous' : pseudo)  + ` (${calcWins(player.socketId)})`),
                         h('span', { class: 'text-gray-100  italic' }, state),
-                        h('span',{ class: 'text-secondary-400' }, 'ao5: ' + ao5),
-                        h('span', {class:'text-gray-100'}, 'ao12 ' + ao12),
-                        h('span', {class:'text-gray-100'}, 'mean: ' + themean),
+                        h('span', { class: 'text-secondary-400' }, 'ao5: ' + ao5),
+                        h('span', { class:'text-gray-100'}, 'ao12 ' + ao12),
+                        h('span', { class:'text-gray-100'}, 'mean: ' + themean),
 
                     ])]
                 );
@@ -62,17 +64,18 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
 
                 },
             },
-            cell: ({ row }) => {
-
-                return h('div', { class: `${isBestSolveTime(row, player.socketId) ? 'text-primary-500' : 'text-gray-100'}` }, () => {
-                    if (row.getValue(player.socketId)) {
-                        const obj = row.getValue(player.socketId) as { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' };
-                        const timeReadable = timeForHuman(obj.time);
-                        if (obj.finalPenality === 'DNF') {
+            cell: ({ cell }) => {
+           
+                const playerTime = cell.getValue() as PlayerTime;
+                return h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}` }, () => {
+                    if (playerTime) {
+                        
+                        const timeReadable = timeForHuman(playerTime.time);
+                        if (playerTime.finalPenality === 'DNF') {
                             return `DNF(${timeReadable})`;
-                        } else if (obj.finalPenality === '+2') {
+                        } else if (playerTime.finalPenality === '+2') {
                             return `${timeReadable}+`;
-                        } else if (obj.finalPenality === '+4') {
+                        } else if (playerTime.finalPenality === '+4') {
                             return `${timeReadable}++`;
                         } else {
                             return timeReadable;
@@ -104,33 +107,12 @@ const stateForHuman = (state: PlayerState) => {
     }
 };
 
-const isBestSolveTime = (row: TableRow<Solve>, id: string) => {
-    const valueToCompare = row.getValue(id) as { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' };
-    const actualRow = row.getAllCells();
-    if (!valueToCompare || valueToCompare.finalPenality === 'DNF') {
-        return false;
-    }
-
-    let bestTime: number = 9999999;
-
-    for (let i = 1; i < actualRow.length; i++) {
-        const currentCellValue = actualRow[i]?.getValue() as { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' };
-        if (currentCellValue && currentCellValue.finalPenality !== 'DNF') {
-
-            if (currentCellValue.time < bestTime) {
-                bestTime = currentCellValue.time;
-            }
-        }
-    }
-    return valueToCompare.time === bestTime ? true : false;
-};
-
 const mean = (playerId: string) => {
 
     let timeCumul = 0;
     let countWithNoDNF = 0;
-    for (let i = 0; i < props.times.length; i++) {
-        const playerSolve: { time: number, finalPenality: 'DNF' | '+2' | '+4' | 'OK' } | undefined = props.times[i]![playerId];
+    for (let i = 0; i < props.solves.length; i++) {
+        const playerSolve: PlayerTime| undefined = props.solves[i]![playerId];
         if (playerSolve && playerSolve.time && playerSolve.finalPenality !== 'DNF') {
             countWithNoDNF++;
             timeCumul += playerSolve.time;
@@ -141,8 +123,8 @@ const mean = (playerId: string) => {
 
 const currentAvg = (avgOf: 5 | 12, playerId: string) => {
 
-    if (props.times.filter((solve) => solve[playerId]).length >= avgOf) {
-        const lastSolves = props.times.slice(0, avgOf);
+    if (props.solves.filter((solve) => solve[playerId]).length >= avgOf) {
+        const lastSolves = props.solves.slice(0, avgOf);
         const nbOfDNF = lastSolves.filter((solve: any) => (solve[playerId].finalPenality === 'DNF')).length;
         if (nbOfDNF > 1) {
             return 'DNF';
@@ -168,4 +150,15 @@ const currentAvg = (avgOf: 5 | 12, playerId: string) => {
         return 'DNF';
     }
 };
+
+const calcWins = (id : string) => {
+    let wins = 0;
+
+    for (const solve of props.solves) {
+        if (solve[id] && solve[id].win) {
+            wins++
+        }
+    }
+    return wins
+}
 </script>

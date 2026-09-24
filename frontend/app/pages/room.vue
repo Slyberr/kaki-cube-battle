@@ -47,7 +47,7 @@
 
 
     <div v-if="me && showPage && room" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
-      <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :times="room.allSolves"
+      <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
         :solve-id="room.actualSolveId" :me="me" />
 
       <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
@@ -69,6 +69,7 @@
 import { Socket } from 'socket.io-client';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { TwistyPlayer } from 'cubing/twisty';
+import { allAudiosInspection } from '~/constants/constants';
 
 const socket: Socket = useSocket();
 
@@ -95,7 +96,7 @@ const puzzle = ref<string>('');
 const localPlayerState = ref<PlayerState>('READY');
 const readyHoldingTime = ref<number>(0.3);
 const inspection = ref<boolean>(false);
-const audiosForInspection = ref<(string | HTMLAudioElement)[]>(['Rien', 'rien']);
+const audiosForInspection = ref<[string,string,HTMLAudioElement?,HTMLAudioElement?]>(['rien','Rien']);
 
 const inputMode = ref<'KEYBOARD' | 'MANUALLY'>('KEYBOARD');
 const drawer = ref<TwistyPlayer>();
@@ -122,11 +123,24 @@ const dropDownItems = computed((): DropdownMenuItem[][] => {
 
 const toast = useToast();
 
-
 //ALL LISTENERS SECTIONS
 
 onMounted(() => {
 
+  const options = localStorage.getItem('options');
+  let json;
+  if (options) {
+    json = JSON.parse(options);
+  }
+ 
+
+  if (json) {
+    inputMode.value = (json.mode === 'MANUALLY' || json.mode === 'KEYBOARD') ?  json.mode : 'KEYBOARD';
+    readyHoldingTime.value = (json.holding < 1) ? json.holding : 0.3;
+    inspection.value = (json.inspection.activate === true || json.inspection.activate === false) ? json.inspection.activate : false;
+    audiosForInspection.value = allAudiosInspection.get(json.inspection.key) ?? allAudiosInspection.get('rien')!;
+  }
+ 
   //emit on onMounted i-want-room-data to get data.
   socket.emit('i-want-room-data');
 
