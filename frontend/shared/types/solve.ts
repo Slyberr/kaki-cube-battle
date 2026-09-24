@@ -49,7 +49,7 @@ export type EventID =
   | '777';
 
 export const mapEvent = new Map<
-  string,
+  EventID,
   { toDisplay: string; toDrawer: string }
 >([
   ['222', { toDisplay: '2x2', toDrawer: '2x2x2' }],

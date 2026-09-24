@@ -21,14 +21,21 @@
       <div v-if="showPage" id="head-info" class="relative flex flex-col text-center w-full">
         <h1 class="text-3xl">{{ room.roomname }}</h1>
 
-        <p v-if="me.owner">(Vous êtes le<i class="text-primary"> modérateur</i>)</p>
-        <p class="text-2xl">{{ puzzle }}</p>
-        <div class="absolute top-22 flex justify-center w-full">
-          <p
-            class="m-2 text-xs sm:text-sm md:text-base 2xl:text-lg w-[90%] md:w-[80%] lg:w-[70%] xl:w-[65%] 2xl:w-[60%]  ">
+        <p v-if="me.owner">(Vous <i class="text-primary"> gérez </i> cette salle)</p>
+        <p class="text-2xl text-secondary-300">{{ puzzle }}</p>
+        <div class="flex justify-center w-full h-37"
+          :class="
+          room.event === '777' || room.event === '666' 
+          ? 'max-[400px]:h-54' 
+          : room.event === 'minx' || room.event.includes('555')
+            ? 'max-[1000px]:h-35' 
+            : 'max-[1000px]:h-25'">
+
+          <p class="w-[95%] sm:w-[90%] md:w-[80%] lg:w-[70%] xl:w-[55%] 2xl:w-[50%]"
+            :class="room.event === '777' || room.event === '666' || room.event === 'minx' || room.event.includes('555') ? 'text-md md:text-lg 2xl:text-xl' : 'text-lg md:text-xl 2xl:text-2xl'">
             {{ scrambleLabel }}</p>
         </div>
-        <div class="flex justify-center w-full" :class="me.owner ? 'pt-34' : 'pt-42'">
+        <div class="flex justify-center w-full">
           <Timer :local-player-state="localPlayerState" :ready-holding-time="readyHoldingTime"
             :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection"
             @player-change-state="(state: PlayerState) => changeState(state)"
@@ -96,7 +103,7 @@ const puzzle = ref<string>('');
 const localPlayerState = ref<PlayerState>('READY');
 const readyHoldingTime = ref<number>(0.3);
 const inspection = ref<boolean>(false);
-const audiosForInspection = ref<[string,string,HTMLAudioElement?,HTMLAudioElement?]>(['rien','Rien']);
+const audiosForInspection = ref<[string, string, HTMLAudioElement?, HTMLAudioElement?]>(['rien', 'Rien']);
 
 const inputMode = ref<'KEYBOARD' | 'MANUALLY'>('KEYBOARD');
 const drawer = ref<TwistyPlayer>();
@@ -132,15 +139,15 @@ onMounted(() => {
   if (options) {
     json = JSON.parse(options);
   }
- 
+
 
   if (json) {
-    inputMode.value = (json.mode === 'MANUALLY' || json.mode === 'KEYBOARD') ?  json.mode : 'KEYBOARD';
+    inputMode.value = (json.mode === 'MANUALLY' || json.mode === 'KEYBOARD') ? json.mode : 'KEYBOARD';
     readyHoldingTime.value = (json.holding < 1) ? json.holding : 0.3;
     inspection.value = (json.inspection.activate === true || json.inspection.activate === false) ? json.inspection.activate : false;
     audiosForInspection.value = allAudiosInspection.get(json.inspection.key) ?? allAudiosInspection.get('rien')!;
   }
- 
+
   //emit on onMounted i-want-room-data to get data.
   socket.emit('i-want-room-data');
 
@@ -269,12 +276,13 @@ onMounted(() => {
   });
 
   //When owner change the event
-  socket.on('event-updated', (info: { event: string, scramble: string }) => {
+  socket.on('event-updated', (info: { event: EventID, scramble: string }) => {
     const eventInfo = mapEvent.get(info.event);
 
     if (eventInfo) {
       puzzle.value = eventInfo.toDisplay;
       room.actualScramble = info.scramble;
+      room.event = info.event;
       scrambleLabel.value = room.actualScramble;
 
       room.allSolves = [{ solveId: 0 }];
@@ -306,7 +314,7 @@ const leaveRoom = async () => {
   openModal.value = false;
   canLeave.value = true;
   return navigateTo('/home');
- 
+
 };
 
 onBeforeRouteLeave((to, from) => {
@@ -331,7 +339,7 @@ const changeState = (state: PlayerState) => {
   socket.emit('change-state', state);
   if (state === 'CONFIRMATION') {
     scrambleLabel.value = 'Confirmation du temps...';
-  } 
+  }
   //Retry case
   if (state === 'READY') {
     scrambleLabel.value = room.actualScramble;
