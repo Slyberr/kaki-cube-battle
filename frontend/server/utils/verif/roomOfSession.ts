@@ -9,11 +9,11 @@ import { ServerRoom } from "~~/server/type";
 
 
 /**
- * Return the room if session ID is associated of a player on a room, return undefined instead. If 'actualSocketId' of the session player is undefined, affection of the new socket.id and socket re-join the room (comeback logic). 
- * If actualSocketID is already defined, a tab is already on session, cannot join.
+ * Return the room of a session ID. If no room, return undefined. 
+ * If 'actualSocketId' of the player on this room is undefined, affect the new socket.id + re-join the socket.io room (comeback logic). 
  * @param sessionID 
  * @param rooms 
- * @returns 
+ * @returns
  */
 export const roomOfSession = (socket : Socket,rooms : Map<string,ServerRoom>) : [ServerRoom | undefined,tabOpened : boolean] => {
     
@@ -26,7 +26,13 @@ export const roomOfSession = (socket : Socket,rooms : Map<string,ServerRoom>) : 
       //Player try to come back, affect a the new socket.id
       if (!playerInRoom.actualSocketId) {
         playerInRoom.actualSocketId = socket.id;
-        playerInRoom.state = 'READY';
+        //If time was submit and waiting others state when disconnected + still the same solve.
+        if (playerInRoom.state === 'SCORED' && room.currentSolve[socket.handshake.auth.sessionid]?.time) {
+          playerInRoom.state = 'SCORED';
+        } else {
+          playerInRoom.state = 'READY';
+        }
+
         isTabAlreadyOpen = false;
         socket.join(room.roomname);
       } else {

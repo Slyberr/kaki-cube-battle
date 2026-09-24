@@ -31,6 +31,9 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
                     td: 'w-10',
                 }
             },
+            cell : ({cell}) => {
+                return h('span', {class : 'text-cyan-500'},cell.getValue() as number)
+            }
         },
     ];
     
@@ -121,17 +124,18 @@ const mean = (playerId: string) => {
     return timeCumul === 0 ? 'DNF' : timeForHuman((timeCumul / countWithNoDNF));
 };
 
+//Algo non robust, à généraliser quand faire ao50 et ao100
 const currentAvg = (avgOf: 5 | 12, playerId: string) => {
 
     if (props.solves.filter((solve) => solve[playerId]).length >= avgOf) {
         const lastSolves = props.solves.slice(0, avgOf);
-        const nbOfDNF = lastSolves.filter((solve: any) => (solve[playerId].finalPenality === 'DNF')).length;
+        const nbOfDNF = lastSolves.filter((solve: any) => (solve[playerId]?.finalPenality === 'DNF' || solve[playerId] === undefined)).length;
         if (nbOfDNF > 1) {
             return 'DNF';
         } else {
-            let sortedSolve = lastSolves.sort((a, b) => a[playerId].time - b[playerId].time);
+            let sortedSolve = lastSolves.sort((a, b) => a[playerId]?.time - b[playerId]?.time);
             if (nbOfDNF === 1) {
-                const indexOfDNF = sortedSolve.findIndex((solve: any) => solve[playerId].finalPenality === 'DNF');
+                const indexOfDNF = sortedSolve.findIndex((solve: any) => solve[playerId]?.finalPenality === 'DNF');
                 sortedSolve.splice(indexOfDNF, 1);
             } else {
                 //remove the worst
@@ -141,7 +145,7 @@ const currentAvg = (avgOf: 5 | 12, playerId: string) => {
             sortedSolve.splice(0, 1);
             let timeCumul = 0;
             sortedSolve.forEach((solve) => {
-                timeCumul += solve[playerId].time;
+                timeCumul += solve[playerId]?.time;
             })
             return timeForHuman((timeCumul / (avgOf - 2)));
         }
