@@ -47,7 +47,7 @@
 
 
     <div v-if="me && showPage && room" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
-      <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :times="room.allSolves"
+      <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
         :solve-id="room.actualSolveId" :me="me" />
 
       <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
