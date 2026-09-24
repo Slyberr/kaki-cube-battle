@@ -62,11 +62,11 @@
 import type { RadioGroupItem } from '@nuxt/ui';
 
 const props = defineProps<{
-  localPlayerState: PlayerState,
   readyHoldingTime: number,
   activeInspection: boolean,
   inputMode: 'KEYBOARD' | 'MANUALLY',
   audios: [string,string,HTMLAudioElement?,HTMLAudioElement?],
+  me: ClientPlayer
 }>();
 
 const timer = reactive<{
@@ -124,6 +124,14 @@ const toast = useToast();
 const emits = defineEmits(['playerChangeState', 'time-sended']);
 
 onMounted(() => {
+  console.log(props.me)
+  //Comeback during waiting_other state
+  if (props.me && props.me.state === 'SCORED') {
+    timer.state = 'WAITING_OTHER';
+    buttonLabel.value = "En attente des joueurs";
+    timer.color = 'text-muted';
+    
+  }
   window.addEventListener('keydown', timerDownManager);
   window.addEventListener('keyup', timerUpManager);
   window.addEventListener('keydown', onKeyDownEnter);
@@ -444,7 +452,7 @@ const timerHoldingBeforeGo = () => {
 };
 
 //Triggered when all player submit the time on server (next solve).
-watch(() => props.localPlayerState, async (newState, oldState) => {
+watch(() => props.me.state, async (newState, oldState) => {
   if (oldState !== newState && newState == 'READY') {
     timer.timeDisplayed = '0.00';
     timer.state = 'BEGIN_STATE';
