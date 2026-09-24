@@ -66,7 +66,7 @@ const props = defineProps<{
   readyHoldingTime: number,
   activeInspection: boolean,
   inputMode: 'KEYBOARD' | 'MANUALLY',
-  audios: (string | HTMLAudioElement)[],
+  audios: [string,string,HTMLAudioElement?,HTMLAudioElement?],
 }>();
 
 const timer = reactive<{
