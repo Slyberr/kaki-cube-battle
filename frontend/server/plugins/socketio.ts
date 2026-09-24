@@ -29,55 +29,59 @@ const rooms: Map<string, ServerRoom> = new Map();
 
 //clean inactives players (30min after leave a room).
 const min = 30;
-setInterval(() => {
-  console.log('------------------Rooms state log------------------');
-  rooms.forEach((room) => {
-    let playerToPurge: string[] = [];
-    if (room.players.length > 0) {
-      room.players.forEach((player) => {
-        if (
-          !player.actualSocketId &&
-          player.expiration &&
-          isSessionExpired(player.expiration, min)
-        ) {
-          //Purge times
+setInterval(
+  () => {
+    console.log('\x1b[32m------------------Rooms status log------------------\x1b[0m');
+    rooms.forEach((room) => {
+      let playerToPurge: string[] = [];
+      if (room.players.length > 0) {
+        room.players.forEach((player) => {
+          if (
+            !player.actualSocketId &&
+            player.expiration &&
+            isSessionExpired(player.expiration, min)
+          ) {
+            //Purge times
 
-          room.allSolves.forEach((solve) => {
-            delete solve[player.sessionId];
-          });
-          playerToPurge.push(player.sessionId);
-          console.info(
-            `player ${player.pseudo} on ${room.roomname}'s room was deleted -> inactivity: ${(Date.now() - player.expiration) / 1000}s > ${min * 60}s.`,
-          );
-        }
-      });
+            room.allSolves.forEach((solve) => {
+              delete solve[player.sessionId];
+            });
+            playerToPurge.push(player.sessionId);
+            console.info(
+              `session of ${player.pseudo} on ${room.roomname}'s room is expired : ${(Date.now() - player.expiration) / 1000}s > ${min * 60}s.`,
+            );
+          }
+        });
 
-      //purge players
-      room.players = room.players.filter(
-        (player) => !playerToPurge.includes(player.sessionId),
-      );
-    }
+        //purge players
+        room.players = room.players.filter(
+          (player) => !playerToPurge.includes(player.sessionId),
+        );
+      }
 
-    if (room.players.length === 0) {
-      //Room empty not deleted because the last one just close tab
-      rooms.delete(room.roomname);
-      console.info(
-        `${room.roomname}'s room deleted -> \n The last one disconnected and never try to come back before expiration`,
-      );
-    } else {
-      console.info(`${room.roomname}'s room.`);
-      console.info('Players left : ');
-      room.players.forEach((player) =>
+      if (room.players.length === 0) {
+        //Room empty not deleted because the last one just close tab
+        rooms.delete(room.roomname);
         console.info(
-          player.pseudo,
-          player.actualSocketId ? '(active)' : '(inactive)',
-        ),
-      );
-    }
-  });
-  console.log('------------------End Rooms state log------------------');
-  //Can purge rooms each 10 mins.
-}, 1000 * 60 * 10);
+          `${room.roomname}'s room deleted -> \n The last one disconnected and never coming back before expiration`,
+        );
+      } else {
+        console.info(`${room.roomname}'s room.`);
+        console.info('Players lefts : ');
+        room.players.forEach((player) =>
+          console.info(
+            player.pseudo,
+            player.actualSocketId ? '(active)' : '(inactive)',
+          ),
+        );
+      }
+    });
+    console.log('\x1b[32m------------------End rooms status log------------------\x1b[0m');
+    console.log('');
+    //Can purge rooms each 10 mins.
+  },
+  1000 * 60 * 10,
+);
 
 export default defineNitroPlugin((nitroApp) => {
   const engine = new Engine();
@@ -92,31 +96,16 @@ export default defineNitroPlugin((nitroApp) => {
     socket.on('i-want-all-rooms', () => {
       const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
 
-      //Comeback logic
+      //Comeback logic step 1.
       if (room && !tabAlreadyOpen) {
         //can come back if roomOfsession() affect a the new socketID.
-        const player = room.players.find(
-          (player) =>
-            player.sessionId === socket.handshake.auth.sessionid &&
-            player.actualSocketId === socket.id,
-        );
-
-        if (player) {
-          if (!room.players.find((player) => player.owner)) {
-            //all was disconnected or room was empty.
-            player.owner = true;
-          }
-
-          player.expiration = undefined;
+        //if user call home.vue, just redirect on room.vue (will call anyway i-want-room-data)
           socket.data.roomname = room.roomname;
           socket.data.joiningRoom = true;
-
-          socket.join(room.roomname);
-
           rooms.set(room.roomname, room);
+
           socket.emit('go-to-room', { ok: true });
           io.emit('get-rooms', displayRoomsForHomePage(rooms));
-        }
       } else {
         if (tabAlreadyOpen) {
           socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
@@ -144,18 +133,18 @@ export default defineNitroPlugin((nitroApp) => {
             player.actualSocketId = undefined;
             if (player.owner) {
               player.owner = false;
-                room.players.find((player2)=> { 
-                if (player2.actualSocketId  && !player2.owner ) { 
-                  player2.owner = true; 
+              room.players.find((player2) => {
+                if (player2.actualSocketId && !player2.owner) {
+                  player2.owner = true;
                   return true;
                 } else {
                   return false;
                 }
-              })
+              });
             }
-            
+
             socket.leave(room.roomname);
-        
+
             player.expiration = Date.now();
             rooms.set(room.roomname, room);
           }
@@ -167,7 +156,7 @@ export default defineNitroPlugin((nitroApp) => {
         );
         io.emit('get-rooms', displayRoomsForHomePage(rooms));
         //If everyone in this room submit his time  (some players can be not here because can comeback)
-        //AND there is >= 1 active player
+        //AND there is >= 1 active playerhttps://railway.com/project/121850fd-ddf1-4c1e-a016-9db322f28666?environmentId=a9ec7c60-81f1-45e0-9153-7f2b55b954fd
 
         if (
           room.players.every(
@@ -277,41 +266,52 @@ export default defineNitroPlugin((nitroApp) => {
     );
 
     //asked immediatly when playe entry on room/[id].vue
-    //Do a comeback logic too here.
     socket.on('i-want-room-data', () => {
       const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
 
-      if (
-        room &&
-        (!tabAlreadyOpen || socket.data.joiningRoom)
-      ) {
-        socket.data.joiningRoom = false;
-        socket.data.roomname = room.roomname;
-        //socket.join(room.roomname)
-        //players, times...
-        const clientRoom: ClientRoom = {
-          roomname: room.roomname,
-          actualScramble: room.actualScramble,
-          actualSolveId: room.actualSolveId,
-          allSolves: room.allSolves.map((solve) =>
-            convertSolveForClient(solve, room.players),
-          ),
-          event: room.event,
-          players: convertPlayersForClient(room.players),
-        };
-
-        io.to(room.roomname).emit('send-all-room-data', {
-          room: clientRoom,
-          error: false,
-        });
-
-        //when a new player come (event for players already in room)
-        io.to(room.roomname).emit(
-          'players-updated',
-          convertPlayersForClient(room.players),
+      //comeback logic step 2 + join logic.
+      if (room && (!tabAlreadyOpen || socket.data.joiningRoom)) {
+        const player = room.players.find(
+          (player) =>
+            player.sessionId === socket.handshake.auth.sessionid &&
+            player.actualSocketId === socket.id,
         );
-        //Emit to EVERYONE rooms updated
-        io.emit('get-rooms', displayRoomsForHomePage(rooms));
+
+        if (player) {
+          console.log(player);
+          socket.data.joiningRoom = false;
+          socket.data.roomname = room.roomname;
+
+          if (!room.players.find((player) => player.owner)) {
+            //all disconnected or room is empty.
+            player.owner = true;
+          }
+          player.expiration = undefined;
+
+          const clientRoom: ClientRoom = {
+            roomname: room.roomname,
+            actualScramble: room.actualScramble,
+            actualSolveId: room.actualSolveId,
+            allSolves: room.allSolves.map((solve) =>
+              convertSolveForClient(solve, room.players),
+            ),
+            event: room.event,
+            players: convertPlayersForClient(room.players),
+          };
+
+          io.to(room.roomname).emit('send-all-room-data', {
+            room: clientRoom,
+            error: false,
+          });
+
+          //when a new player come (event for players already in room)
+          io.to(room.roomname).emit(
+            'players-updated',
+            convertPlayersForClient(room.players),
+          );
+          //Emit to EVERYONE rooms updated
+          io.emit('get-rooms', displayRoomsForHomePage(rooms));
+        }
       } else {
         socket.emit('send-all-room-data', { error: true });
       }
