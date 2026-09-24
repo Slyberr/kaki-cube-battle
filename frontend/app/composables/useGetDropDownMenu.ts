@@ -7,6 +7,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui/runtime/components/DropdownMenu.vue.js';
 import type { Socket } from 'socket.io-client';
 import type { Reactive } from 'vue';
+import { allAudiosInspection } from '~/constants/constants';
 
 /**
  * Give the dropdownMenu option
@@ -20,19 +21,20 @@ import type { Reactive } from 'vue';
  * @returns
  */
 export const useGetDropDownMenu = (
-  readyHoldingTime: Ref<Number>,
+  readyHoldingTime: Ref<number>,
   inspection: Ref<boolean>,
   inputMode: Ref<'KEYBOARD' | 'MANUALLY'>,
-  audioForInspection: Ref<(string| HTMLAudioElement)[]>,
+  audioForInspection: Ref<
+    [string, string, HTMLAudioElement?, HTMLAudioElement?]
+  >,
   socket: Socket,
   room: Reactive<ClientRoom>,
   me: Reactive<ClientPlayer>,
 ): DropdownMenuItem[][] => {
-  
   const playersToexpulseMenu: any[] = [];
 
   room.players.forEach((player) => {
-     if (player.socketId !== me.socketId) {
+    if (player.socketId !== me.socketId) {
       playersToexpulseMenu.push({
         label: player.pseudo,
         onSelect: () => {
@@ -40,9 +42,9 @@ export const useGetDropDownMenu = (
         },
       });
     }
-  })
-   
-  
+  });
+
+  let options = JSON.parse(localStorage.getItem('options') ?? 'undefined');
 
   const menuForEveryone: DropdownMenuItem[][] = [
     [
@@ -65,35 +67,35 @@ export const useGetDropDownMenu = (
         ],
       },
       {
-        label : 'Presser la barre espace pendant...',
+        label: `Rester appuyer pendant... (${readyHoldingTime.value}s)`,
         icon: 'lucide:clock-check',
-        disabled : inputMode.value === 'MANUALLY',
-        children : [
+        disabled: inputMode.value === 'MANUALLY',
+        children: [
           {
-          label: '0 seconde (déclencher dès la touche pressée)',
-          onSelect: () => {
-            readyHoldingTime.value = 0;
+            label: '0 seconde (déclencher dès la touche pressée)',
+            onSelect: () => {
+              readyHoldingTime.value = 0;
+            },
           },
-        },
-        {
-          label: '0.3 seconde',
-          onSelect: () => {
-            readyHoldingTime.value = 0.3;
+          {
+            label: '0.3 seconde',
+            onSelect: () => {
+              readyHoldingTime.value = 0.3;
+            },
           },
-        },
-        {
-          label: '0.55 seconde (Stackmat)',
-          onSelect: () => {
-            readyHoldingTime.value = 0.55;
+          {
+            label: '0.55 seconde (Stackmat)',
+            onSelect: () => {
+              readyHoldingTime.value = 0.55;
+            },
           },
-        },
-        {
-          label: '1 seconde',
-          onSelect: () => {
-            readyHoldingTime.value = 1;
+          {
+            label: '1 seconde',
+            onSelect: () => {
+              readyHoldingTime.value = 1;
+            },
           },
-        },  
-      ]
+        ],
       },
       {
         label: `Inspection (${inspection.value ? 'Activée' : 'Désactivée'})`,
@@ -107,82 +109,63 @@ export const useGetDropDownMenu = (
             },
           },
           {
-            label: `Son pour l'inspection (${audioForInspection.value[0]})`,
+            label: `Son pour l'inspection (${audioForInspection.value[1]})`,
             icon: 'lucide:volume-2',
-            disabled : !inspection.value,
+            disabled: !inspection.value,
             children: [
               {
                 label: 'Rien',
                 onSelect: () => {
-                  audioForInspection.value = ['Rien', 'rien'];
+                  audioForInspection.value = allAudiosInspection.get('rien')!;
                 },
               },
               {
                 label: 'Voix',
-                children : [
+                children: [
                   {
                     label: '8/12',
                     onSelect: () => {
-                      audioForInspection.value = [
-                        '8/12',
-                        '8-12',
-                        new Audio('/audio/8-louis.wav'),
-                        new Audio('/audio/12-louis.wav'),
-                      ];
+                      audioForInspection.value =
+                        allAudiosInspection.get('8-12')!;
                     },
                   },
                   {
                     label: '8/12 secondes',
                     onSelect: () => {
-                      audioForInspection.value = [
-                        '8/12 secondes',
-                        '8-12-sec',
-                        new Audio('/audio/8-sec-louis.wav'),
-                        new Audio('/audio/12-sec-louis.wav'),
-                      ];
+                      audioForInspection.value =
+                        allAudiosInspection.get('8-12-sec')!;
                     },
                   },
                   {
                     label: '8/12 secondes Polonais by Le Peuneuj Roux',
                     onSelect: () => {
-                      audioForInspection.value = [
-                        '8/12 secondes en polonais by le Peuneuj Roux',
+                      audioForInspection.value = allAudiosInspection.get(
                         '8-12-sec-pol-peuneuj',
-                        new Audio('/audio/8-peuneuj.wav'),
-                        new Audio('/audio/12-peuneuj.wav'),
-                      ];
+                      )!;
                     },
                   },
-                ]
+                ],
               },
               {
                 label: 'Son',
-                children : [
+                children: [
                   {
                     label: 'Simples pings',
                     onSelect: () => {
-                      audioForInspection.value = [
-                        'Simples pings',
-                        'simples-pings',
-                        new Audio('/audio/8-simple-ping.wav'),
-                        new Audio('/audio/12-simple-ping.wav'),
-                      ];
+                      audioForInspection.value =
+                        allAudiosInspection.get('simples-ping')!;
                     },
                   },
-                 
+
                   {
                     label: 'Simple/Triple ping',
                     onSelect: () => {
-                      audioForInspection.value = [
-                        'Simple/Triple ping',
-                        'simple-triple-ping',
-                        new Audio('/audio/8-simple-ping.wav'),
-                        new Audio('/audio/12-triple-ping.wav'),
-                      ];
+                      audioForInspection.value =
+                        allAudiosInspection.get('simple-triple-ping')!;
                     },
                   },
-                ]
-              }  
+                ],
+              },
             ],
           },
         ],
@@ -314,5 +297,23 @@ export const useGetDropDownMenu = (
       },
     ]);
   }
+
+  if (
+    options.holding &&
+    options.inspection.key &&
+    options.mode &&
+    options.inspection.activate !== undefined
+  ) {
+    options.holding = readyHoldingTime.value;
+    options.inspection.activate = inspection.value;
+    options.mode = inputMode.value;
+   
+    options.inspection.key = audioForInspection.value[0];
+    
+
+    //update localstorage
+    localStorage.setItem('options', JSON.stringify(options));
+  }
+
   return menuForEveryone;
 };

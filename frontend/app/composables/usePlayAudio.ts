@@ -11,19 +11,19 @@
  */
 export const usePlayAudio = async (
   inspectionTime: number,
-  audios: (HTMLAudioElement | string)[],
+  audios: [string,string,HTMLAudioElement?,HTMLAudioElement?],
 ) => {
-  if (inspectionTime === 7 && audios.length === 4) {
+  if (inspectionTime === 7 && audios[2] ) {
    
-    (audios[2]! as HTMLAudioElement).currentTime = 0;
-    (audios[2]! as HTMLAudioElement).volume = 1;
-    await (audios[2]! as HTMLAudioElement).play();
+    audios[2].currentTime = 0;
+    audios[2].volume = 1;
+    await audios[2].play();
   }
 
-  if (inspectionTime === 3 && audios.length === 4) {
+  if (inspectionTime === 3 && audios[3]) {
   
-    (audios[3]! as HTMLAudioElement).currentTime = 0;
-    (audios[3]! as HTMLAudioElement).volume = 1;
-    await (audios[3]! as HTMLAudioElement).play();
+    audios[3].currentTime = 0;
+    audios[3].volume = 1;
+    audios[3].play();
   }
 };
