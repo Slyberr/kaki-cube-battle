@@ -32,8 +32,7 @@ export const everyoneScored = async (
 
     //Each new row is the first row.
     room.allSolves.unshift(room.currentSolve);
-
-    room.actualScramble = newScramble;
+      
     room.actualSolveId++;
     room.players.forEach((player : ServerPlayer) => (player.state = 'READY'));
     io.to(roomname).emit('players-updated', convertPlayersForClient(room.players));
@@ -46,7 +45,8 @@ export const everyoneScored = async (
       solveId: room.actualSolveId,
     });
 
-    room.currentSolve = { solveId: 0 };
+    room.actualScramble = newScramble;
+    room.currentSolve = { solveId: 0,data : {scramble : ''} };
     rooms.set(roomname, room);
   }
 };

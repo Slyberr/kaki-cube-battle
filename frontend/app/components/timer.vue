@@ -124,7 +124,6 @@ const toast = useToast();
 const emits = defineEmits(['playerChangeState', 'time-sended']);
 
 onMounted(() => {
-  console.log(props.me)
   //Comeback during waiting_other state
   if (props.me && props.me.state === 'SCORED') {
     timer.state = 'WAITING_OTHER';

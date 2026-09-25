@@ -24,7 +24,7 @@
         <p v-if="me.owner">(Vous <i class="text-primary"> gérez </i> cette salle)</p>
         <p class="text-2xl text-muted">{{ puzzle }}</p>
         <div class="flex justify-center w-full h-37" :class="room.event === '777' || room.event === '666'
-            ? 'max-[400px]:h-54'
+            ? 'h-42 max-[400px]:h-54'
             : room.event === 'minx' || room.event.includes('555')
               ? 'max-[1000px]:h-35'
               : 'max-[1000px]:h-25'">
@@ -53,7 +53,7 @@
 
     <div v-if="me && showPage && room" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
       <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
-        :solve-id="room.actualSolveId" :me="me" />
+        :solve-id="room.actualSolveId" :me="me", :event="room.event" />
 
       <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
     </div>
@@ -84,7 +84,7 @@ const room = reactive<ClientRoom>(
     roomname: '',
     players: [],
     actualSolveId: 0,
-    allSolves: [{ solveId: 0 }],
+    allSolves: [{ solveId: 0 ,data : {scramble : ''}}],
     actualScramble: '',
     event: '333'
   }
@@ -183,7 +183,7 @@ onMounted(() => {
         }
 
         //Scenario : i'm new player but the room already begin 
-        room.allSolves = info.room.allSolves.length === 1 && info.room.allSolves[0]?.solveId === 0 ? [{ solveId: 0 }] : info.room.allSolves;
+        room.allSolves = info.room.allSolves.length === 1 && info.room.allSolves[0]?.solveId === 0 ? [{ solveId: 0,data : {scramble : ''} }] : info.room.allSolves;
         room.actualSolveId = info.room.actualSolveId;
         puzzle.value = mapEvent.get(room.event)?.toDisplay ?? '';
       }
@@ -282,7 +282,7 @@ onMounted(() => {
       room.event = info.event;
       scrambleLabel.value = room.actualScramble;
 
-      room.allSolves = [{ solveId: 0 }];
+      room.allSolves = [{ solveId: 0,data : {scramble : ''} }];
       room.actualSolveId = 1;
 
       //Maj twisty
@@ -293,7 +293,7 @@ onMounted(() => {
   });
 
   socket.on('session-cleaned', () => {
-    room.allSolves = [{ solveId: 0 }];
+    room.allSolves = [{ solveId: 0, data : {scramble : ''} }];
     room.actualSolveId = 1;
   });
 
