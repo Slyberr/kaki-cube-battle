@@ -16,7 +16,10 @@ export const convertSolveForClient = (
   currentSolve: Solve,
   players: ServerPlayer[],
 ) => {
-  const res: Solve = { solveId: currentSolve.solveId };
+  const res: Solve = {
+    solveId: currentSolve.solveId,
+    data: { scramble: currentSolve?.data?.scramble ?? '' },
+  };
 
   for (const [key, value] of Object.entries(currentSolve)) {
     players.forEach((player) => {

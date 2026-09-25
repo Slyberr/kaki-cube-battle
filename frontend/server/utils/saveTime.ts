@@ -40,6 +40,9 @@ export const saveTime = async (
       if (room.currentSolve.solveId === 0) {
         room.currentSolve = {
           solveId: solveId,
+          data : {
+            scramble : room.actualScramble
+          }
         };
       }
 

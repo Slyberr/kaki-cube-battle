@@ -5,7 +5,8 @@
  */
 
 export type Solve = {
-  solveId: number | any;
+  solveId: number,
+  data: {scramble : string},
   //On server == Sessionid, on client == socketId;
   [id: string]: PlayerTime | any;
 };

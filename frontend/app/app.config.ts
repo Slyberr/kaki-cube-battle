@@ -8,8 +8,9 @@ export default defineAppConfig({
   ui: {
     table: {
       slots: {
-        td: "border-r border-b text-center",
+        td: "border-r border-b text-center p-0 h-13",
         th: "text-center whitespace-pre-line",
+        
       },
       variants: {
         sticky: {

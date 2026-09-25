@@ -12,16 +12,16 @@
  */
 
 import { timeForHuman } from '#imports';
-import type { TableColumn, TableRow } from '@nuxt/ui'
-import type { PlayerTime } from '~~/shared/types/solve';
+import { type TableColumn } from '@nuxt/ui'
+import type { EventID, PlayerTime } from '~~/shared/types/solve';
 
-const props = defineProps<{ players: ClientPlayer[], solves: Solve[], solveId: number, me: ClientPlayer }>()
+const props = defineProps<{ players: ClientPlayer[], solves: Solve[], solveId: number, me: ClientPlayer, event: EventID }>()
 
 
 const colonnes = computed<TableColumn<Solve>[]>(() => {
 
     //For every refresh, wins need to be reset.
-   
+
     const mainColumns: TableColumn<Solve>[] = [
         {
             accessorKey: 'solveId',
@@ -31,12 +31,50 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
                     td: 'w-10',
                 }
             },
-            cell : ({cell}) => {
-                return h('span', {class : 'text-cyan-500'},cell.getValue() as number)
+            cell: ({ cell }) => {
+                const solve = props.solves.find((solve) => solve.solveId === cell.getValue() as number);
+                if (solve?.data.scramble) {
+                    let childrens: VNode[] = [h('div', { class: 'text-secondary' }, 'Scores:')];
+
+                    props.players.forEach((player) => {
+
+                        const playerTime = props.solves.find((solve) => solve.solveId === cell.getValue() as number && solve[player.socketId]);
+                        if (playerTime) {
+                            childrens.push(
+                                h('div', {}, `${player.pseudo === props.me.pseudo ? 'Vous': player.pseudo}: ${timeForHuman(playerTime[player.socketId].time)}`)
+                            );
+                        }
+                    });
+
+                    let scores = h('div', { class: 'flex flex-col max-h-10, overflow-y-scroll' }, childrens);
+                    
+                    return h(resolveComponent('UModal'), { title: `Historique du solve n° ${cell.getValue()}` }, {
+
+                        default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: "secondary", class: 'flex text-cyan-500 justify-center w-full min-h-full', label: (cell.getValue() as number).toString() }),
+                        body: () => h('div', { class: 'flex-col' }, [
+                            h('div', { class: 'text-sm max-h-30 overflow-y-scroll bg-secondary-700/40 rounded-xl p-2' }, solve?.data.scramble),
+                            h('div', { class: 'flex w-full' }, [
+                                h('twisty-player', {
+                                    class:'',
+                                    alg: solve.data.scramble,
+                                    puzzle: (mapEvent.get(props.event)!.toDrawer) as EventToDrawer,
+                                    visualization: '2D',
+                                    controlPanel: 'none',
+                                    background: 'none'
+                                },),
+                                h('div', {class:'bg-black w-[50%] m-2 p-2 rounded-xl'}, scores)
+                            ])
+
+                        ])
+                    });
+                } else {
+                    return h('span', { class: 'text-cyan-500' }, cell.getValue() as number)
+                }
+
             }
         },
     ];
-    
+
     for (let player of props.players) {
         mainColumns.push({
             accessorKey: player.socketId,
@@ -50,12 +88,12 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
 
                 return h('div', { class: 'flex justify-center' },
                     [h('div', { class: 'text-center flex flex-col' }, [
-                        
-                        h('span', { class: player.socketId === props.me.socketId ? 'text-primary' : 'text-gray-100' }, (player.socketId === props.me.socketId ? 'Vous' : pseudo)  + ` (${calcWins(player.socketId)})`),
+
+                        h('span', { class: player.socketId === props.me.socketId ? 'text-primary' : 'text-gray-100' }, (player.socketId === props.me.socketId ? 'Vous' : pseudo) + ` (${calcWins(player.socketId)})`),
                         h('span', { class: 'text-gray-100  italic' }, state),
                         h('span', { class: 'text-secondary-400' }, 'ao5: ' + ao5),
-                        h('span', { class:'text-gray-100'}, 'ao12 ' + ao12),
-                        h('span', { class:'text-gray-100'}, 'mean: ' + themean),
+                        h('span', { class: 'text-gray-100' }, 'ao12 ' + ao12),
+                        h('span', { class: 'text-gray-100' }, 'mean: ' + themean),
 
                     ])]
                 );
@@ -68,11 +106,11 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
                 },
             },
             cell: ({ cell }) => {
-           
+
                 const playerTime = cell.getValue() as PlayerTime;
                 return h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}` }, () => {
                     if (playerTime) {
-                        
+
                         const timeReadable = timeForHuman(playerTime.time);
                         if (playerTime.finalPenality === 'DNF') {
                             return `DNF(${timeReadable})`;
@@ -115,7 +153,7 @@ const mean = (playerId: string) => {
     let timeCumul = 0;
     let countWithNoDNF = 0;
     for (let i = 0; i < props.solves.length; i++) {
-        const playerSolve: PlayerTime| undefined = props.solves[i]![playerId];
+        const playerSolve: PlayerTime | undefined = props.solves[i]![playerId];
         if (playerSolve && playerSolve.time && playerSolve.finalPenality !== 'DNF') {
             countWithNoDNF++;
             timeCumul += playerSolve.time;
@@ -155,7 +193,7 @@ const currentAvg = (avgOf: 5 | 12, playerId: string) => {
     }
 };
 
-const calcWins = (id : string) => {
+const calcWins = (id: string) => {
     let wins = 0;
 
     for (const solve of props.solves) {

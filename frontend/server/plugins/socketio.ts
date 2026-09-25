@@ -200,8 +200,8 @@ export default defineNitroPlugin((nitroApp) => {
                 state: 'READY',
               },
             ],
-            currentSolve: { solveId: 0 },
-            allSolves: [{ solveId: 0 }],
+            currentSolve: { solveId: 0, data : {scramble : ''} },
+            allSolves: [{ solveId: 0, data: {scramble : ''} }],
             actualSolveId: 1,
             event: '333',
             actualScramble: (await randomScrambleForEvent('333')).toString(),
@@ -278,7 +278,6 @@ export default defineNitroPlugin((nitroApp) => {
         );
 
         if (player) {
-          console.log(player);
           socket.data.joiningRoom = false;
           socket.data.roomname = room.roomname;
 
@@ -379,8 +378,8 @@ export default defineNitroPlugin((nitroApp) => {
       if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
         room.event = event;
-        room.currentSolve = { solveId: 0 };
-        room.allSolves = [{ solveId: 0 }];
+        room.currentSolve = { solveId: 0, data : {scramble : ''} };
+        room.allSolves = [{ solveId: 0, data : {scramble : ''} }];
         room.actualScramble = (await randomScrambleForEvent(event)).toString();
         room.actualSolveId = 1;
         rooms.set(roomname, room);
@@ -402,8 +401,8 @@ export default defineNitroPlugin((nitroApp) => {
       const roomname = socket.data.roomname;
       if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
-        room.currentSolve = { solveId: 0 };
-        room.allSolves = [{ solveId: 0 }];
+        room.currentSolve = { solveId: 0 , data : {scramble : ''}};
+        room.allSolves = [{ solveId: 0, data : {scramble : ''} }];
         room.actualSolveId = 1;
         io.to(roomname).emit('session-cleaned');
       } else {
