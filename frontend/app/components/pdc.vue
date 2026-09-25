@@ -81,18 +81,21 @@
             <br />
             <br />
             La persistance de session est gérée grâce à le stockage d'un identifiant (UUID) dans le stockage local sur votre navigateur.
-            Cela est utilisé exclusivement pour le fonctionnement des salles de jeux de kakicube.com.
+            Cela est exclusivement utilisé pour le fonctionnement des salles de jeux de kakicube.com.
             <br />
-            Une fois la session expiré, (car vous n'avez pas essayé de vous reconnecter avant le temps imparti) l'identifiant de session est toujours 
+            Une fois la session expirée, (car vous n'avez pas essayé de vous reconnecter avant le temps imparti) l'identifiant de session est toujours 
             présent dans votre navigateur, mais est totalement dissocié de kakicube.com.
 
         </p>
         <br />
         <div class="text-sm">2.2.1/ Supprimer les variables du stockage local</div>
-        <p class="text-xs">Pour supprimer l'indentifiant de stockage local, vous pouvez ouvrir l'inspecteur de votre navigateur (F12) puis rechercher l'onglet 'stockage'.
-            Vous verez alors la section 'Stockage local' (le nom peut différer selon votre navigateur et votre langue), dérouler et trouvez 'kakicube.com'.
+        <p class="text-xs">Pour supprimer l'identifiant de stockage local, vous pouvez ouvrir l'inspecteur de votre navigateur (F12 sur windows) puis rechercher l'onglet '<Samp></Samp>tockage'.
+            Vous verez alors la section 'Stockage local' (le nom peut différer selon votre navigateur et votre langue), dérouler et trouvez 'kakicube.com' (si vous êtes sur le site).
             Vous vous retrouvez la variable 'keep-session' qui sert justement à cet usage et nuxt-color-mode, qui permet de stocker votre préférence de thème sombre ou clair.
-            Une icone indiquera que vous pouvez supprimer toutes les variables.
+            Une icone claire vous indiquera que vous pouvez supprimer toutes les variables.
+
+            Vous pouvez aussi supprimer uniquement un enregistrement (Clé/valeur) en cliquant droit sur ce dernier. Vous pourrez alors supprimer celui qui vous intéresse ('keep-session' est votre session ID).
+
             <br />
             <br />
             Attention ! Si vous retournez sur le site, ces variables reviendront systématiquement.
