@@ -1,5 +1,6 @@
 <template>
-    <p >La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 24 sept 2026).</p>
+    <p>La politique de confidentialité pourrait évoluer, veuillez la lire attentivement (Dernière maj : 24 sept 2026).
+    </p>
     <div class="text-muted">
         <div class="text-lg">1/ Motivation sur la vie privée et les données </div>
         <p class="text-xs">
@@ -20,9 +21,9 @@
             <br />
             - Aucun cookie, même technique, n'est utilisé.
             <br />
-            <br /> 
-            - Une variable de session locale est ajoutée pour la persistance de session. Cela est utilisé pour retrouver votre salle et vos scores lorsque
-            vous fermez l'onglet actif ou votre navigateur par exemple.
+            <br />
+            - Une variable de session locale est ajoutée pour la persistance de session. Cela est utilisé pour retrouver
+            votre salle et vos scores lorsque vous fermez l'onglet actif ou votre navigateur par exemple.
 
         </p>
         <br />
@@ -74,36 +75,46 @@
 
         <div class="text-md">2.2/ Précision sur la durée de vie de la session d'un joueur</div>
         <p class="text-xs">
-            Depuis la version 1.1 de Kaki Cube, lorsque vous fermez l'onglet, que vous rechargez la page ou encore que vous ne laissez plus l'onglet au
+            Depuis la version 1.1 de Kaki Cube, lorsque vous fermez l'onglet, que vous rechargez la page ou encore que
+            vous ne laissez plus l'onglet au
             premier plan sur un téléphone ou une tablette, votre session est expirable au bout de 30 minutes.
-            Autrement dit, pendant ce temps là, les autres joueurs peuvent continuer à jouer sans vous et sans vous voir, mais vous pouvez revenir si
+            Autrement dit, pendant ce temps là, les autres joueurs peuvent continuer à jouer sans vous et sans vous
+            voir, mais vous pouvez revenir si
             vous essayer de revenir sur kakicube.com. Vos scores restent alors intacts.
             <br />
             <br />
-            La persistance de session est gérée grâce à le stockage d'un identifiant (UUID) dans le stockage local sur votre navigateur.
+            La persistance de session est gérée grâce à le stockage d'un identifiant (UUID) dans le stockage local sur
+            votre navigateur.
             Cela est exclusivement utilisé pour le fonctionnement des salles de jeux de kakicube.com.
             <br />
-            Une fois la session expirée, (car vous n'avez pas essayé de vous reconnecter avant le temps imparti) l'identifiant de session est toujours 
+            Une fois la session expirée, (car vous n'avez pas essayé de vous reconnecter avant le temps imparti)
+            l'identifiant de session est toujours
             présent dans votre navigateur, mais est totalement dissocié de kakicube.com.
 
         </p>
         <br />
         <div class="text-sm">2.2.1/ Supprimer les variables du stockage local</div>
-        <p class="text-xs">Pour supprimer l'identifiant de stockage local, vous pouvez ouvrir l'inspecteur de votre navigateur (F12 sur windows) puis rechercher l'onglet 'Stockage'.
-            Vous verez alors la section 'Stockage local' (le nom peut différer selon votre navigateur et votre langue), dérouler et trouvez 'kakicube.com' (si vous êtes sur le site).
-            Vous vous retrouvez la variable 'keep-session' qui sert justement à cet usage et nuxt-color-mode, qui permet de stocker votre préférence de thème sombre ou clair.
+        <p class="text-xs">Pour supprimer l'identifiant de stockage local, vous pouvez ouvrir l'inspecteur de votre
+            navigateur (F12 sur windows) puis rechercher l'onglet 'Stockage'.
+            Vous verez alors la section 'Stockage local' (le nom peut différer selon votre navigateur et votre langue),
+            dérouler et trouvez 'kakicube.com' (si vous êtes sur le site).
+            Vous vous retrouvez la variable 'keep-session' qui sert justement à cet usage 'nuxt-color-mode', qui permet
+            de stocker votre préférence de thème sombre ou clair (généré automatiquement) et 'options', qui permet de
+            garder en mémoire vos préférences d'options dans une salle (mode de saisie, son pour l'inspection...).
             Une icone claire vous indiquera que vous pouvez supprimer toutes les variables.
 
-            Vous pouvez aussi supprimer uniquement un enregistrement (Clé/valeur) en cliquant droit sur ce dernier. Vous pourrez alors supprimer celui qui vous intéresse ('keep-session' est votre session ID).
+            Vous pouvez aussi supprimer uniquement un enregistrement (Clé/valeur) en cliquant droit sur ce dernier. Vous
+            pourrez alors supprimer celui qui vous intéresse ('keep-session' est votre session ID).
 
             <br />
             <br />
             Attention ! Si vous retournez sur le site, ces variables reviendront systématiquement.
-            De plus, si vous les supprimez, kakicube.com ne sera plus en mesure de savoir si vous êtes dans une partie ou non. Tous vos scores seront supprimés.
+            De plus, si vous les supprimez, kakicube.com ne sera plus en mesure de savoir si vous êtes dans une partie
+            ou non. Tous vos scores seront supprimés.
         </p>
-    
+
         <br />
-     
+
         <br />
         <div class="text-lg">3/ Le formulaire de retour</div>
         <p class="text-xs">
@@ -139,7 +150,8 @@
             <li>- vous le désirez, cela sera fait immédiatemment mais tous les échanges seront supprimées.</li>
             <li>- la proposition de la nouvelle fonctionnalité est réfusée ou validée, vous en serez informé.</li>
             <li>- si c'est un bug, lors de sa résolution, vous en serez informé.</li>
-            <li>- si Louis Presti (détenteur de l'adresse mail contact@kakicube.com) n'a plus de nouvelles depuis un moment considérable lors d'une relance pour avoir des
+            <li>- si Louis Presti (détenteur de l'adresse mail contact@kakicube.com) n'a plus de nouvelles depuis un
+                moment considérable lors d'une relance pour avoir des
                 précisions par exemple.</li>
         </ul>
         <br />
