@@ -89,7 +89,7 @@
         </p>
         <br />
         <div class="text-sm">2.2.1/ Supprimer les variables du stockage local</div>
-        <p class="text-xs">Pour supprimer l'identifiant de stockage local, vous pouvez ouvrir l'inspecteur de votre navigateur (F12 sur windows) puis rechercher l'onglet '<Samp></Samp>tockage'.
+        <p class="text-xs">Pour supprimer l'identifiant de stockage local, vous pouvez ouvrir l'inspecteur de votre navigateur (F12 sur windows) puis rechercher l'onglet 'Stockage'.
             Vous verez alors la section 'Stockage local' (le nom peut différer selon votre navigateur et votre langue), dérouler et trouvez 'kakicube.com' (si vous êtes sur le site).
             Vous vous retrouvez la variable 'keep-session' qui sert justement à cet usage et nuxt-color-mode, qui permet de stocker votre préférence de thème sombre ou clair.
             Une icone claire vous indiquera que vous pouvez supprimer toutes les variables.
