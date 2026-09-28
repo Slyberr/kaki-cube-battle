@@ -3,6 +3,7 @@
     :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none'">
 
 
+    <!--if Keyboard mode-->
     <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
 
 
@@ -13,8 +14,8 @@
       <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[405px]:flex-col max-[405px]:items-center"
         v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
         <div class="flex flex-row gap-4">
-          <UButton icon="lucide:rotate-ccw" variant="outline" :disabled="timer.state === 'WAITING_OTHER' || !onConfirmTouchUp"
-            @click="retry" />
+          <UButton icon="lucide:rotate-ccw" variant="outline"
+            :disabled="timer.state === 'WAITING_OTHER' || !onConfirmTouchUp" @click="retry" />
           <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
             :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
             indicator="hidden" orientation="horizontal">
@@ -25,7 +26,32 @@
           :label="buttonLabel" @click="saveTime" />
       </div>
     </div>
-    <!--if manual mod-->
+    <!--if stackmat mode-->
+    <div v-else-if="inputMode === 'STACKMAT'" class="relative  w-full flex flex-col justify-center items-center gap-3">
+
+
+      <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
+        {{
+          timer.timeDisplayed }}</div>
+
+      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[405px]:flex-col max-[405px]:items-center"
+        v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
+        <div class="flex flex-row gap-4">
+          <UButton icon="lucide:rotate-ccw" variant="outline"
+            :disabled="timer.state === 'WAITING_OTHER' || !onConfirmTouchUp" @click="retry" />
+          <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
+            :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
+            indicator="hidden" orientation="horizontal">
+          </URadioGroup>
+        </div>
+
+        <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :disabled="!onConfirmTouchUp"
+          :label="buttonLabel" @click="saveTime" />
+      </div>
+    </div>
+
+
+    <!--if manual mode-->
     <div v-else class="flex flex-col justify-center items-center w-full">
       <template v-if="activeInspection && (timer.state === 'BEGIN_STATE' || timer.state === 'INSPECTION')">
         <div class="text-2xl text-center sm:text-3xl lg:text-4xl transition ease-linear duration-75 select-none"
@@ -60,17 +86,20 @@
  */
 
 import type { RadioGroupItem } from '@nuxt/ui';
+import { Stackmat, type Packet } from 'stackmat';
+import type { Mode } from '~~/shared/types/solve';
 
 const props = defineProps<{
   readyHoldingTime: number,
   activeInspection: boolean,
-  inputMode: 'KEYBOARD' | 'MANUALLY',
-  audios: [string,string,HTMLAudioElement?,HTMLAudioElement?],
+  inputMode: Mode,
+  audios: [string, string, HTMLAudioElement?, HTMLAudioElement?],
   me: ClientPlayer
 }>();
 
 const timer = reactive<{
   realTime: number,
+  beginTimeStamp: number,
   timeFormated: string,
   timeDisplayed: string,
   state: 'BEGIN_STATE' | 'INSPECTION' | 'READY_TO-SOLVE' | 'RUNNING' | 'CONFIRM' | 'WAITING_OTHER',
@@ -81,6 +110,7 @@ const timer = reactive<{
     timeDisplayed: '0.00',
     timeFormated: '0.00',
     realTime: 0.00,
+    beginTimeStamp: 0,
     state: 'BEGIN_STATE',
     color: 'text-gray-50',
     border: 'text-gray-500 border-2 rounded-lg'
@@ -90,6 +120,9 @@ const manualTime = reactive<{ input: string, disabled: boolean }>({
   input: '',
   disabled: false
 });
+
+const stackmatData = ref<Packet>();
+const stackmat = new Stackmat();
 
 const radioSolvePenalities = ref<RadioGroupItem[]>([
   {
@@ -129,8 +162,60 @@ onMounted(() => {
     timer.state = 'WAITING_OTHER';
     buttonLabel.value = "En attente des joueurs";
     timer.color = 'text-muted';
-    
+
   }
+   
+  stackmat.on('timerConnected', (packet: Packet) => {
+    console.log('connected')
+    timer.timeDisplayed = '0.00'
+  });
+
+  stackmat.on('packetReceived', (packet: Packet) => {
+    //Reset function
+    if (
+      stackmatData.value?.timeInMilliseconds !== 0 &&
+      packet.timeInMilliseconds === 0 &&
+      timer.state === 'BEGIN_STATE'
+    ) {
+      timer.realTime = 0.00;
+      timer.timeDisplayed = '0.00';
+    }
+
+    //Stop fonction
+    if (stackmatData.value?.status === ' ' && packet.status === 'I') {
+      timeCompleted(packet);
+
+      if (!onConfirmTouchUp.value) {
+        setTimeout(() => {
+          onConfirmTouchUp.value = true;
+          inspectionValue.value = 15;
+        }, 300);
+      }
+    }
+
+    stackmatData.value = packet;
+
+  });
+
+  stackmat.on('started', (packet: Packet) => {
+    clearInterval(inspectionId.value);
+    stackmatData.value = packet;
+    timerFiredDisplay();
+  })
+
+  stackmat.on('stopped', (packet: Packet) => {
+    //do not  work on GEN5
+  });
+
+  stackmat.on('reset', (packet: Packet) => {
+    //do not work on GEN5
+  });
+  //options local session storage.
+  if (props.inputMode === 'STACKMAT') {
+    timer.timeDisplayed = '--:--';
+    stackmat.start();
+  }
+
   window.addEventListener('keydown', timerDownManager);
   window.addEventListener('keyup', timerUpManager);
   window.addEventListener('keydown', onKeyDownEnter);
@@ -196,23 +281,7 @@ const timerDownManager = (event: KeyboardEvent | TouchEvent) => {
   //Timer can be stopped by any key.
   //On mobile/tablet, timer can be stopped ANYWHERE 
   if (timer.state === 'RUNNING' && props.inputMode === 'KEYBOARD') {
-    clearInterval(timerIntervalId.value);
-    //Save a initial 'toHuman' state before modifie timeDisplayed with the penalities.
-    timer.timeFormated = timer.timeDisplayed;
-    if (inspectionPenality.value === 'PLUS_2') {
-      //ms
-      timer.realTime += 2000;
-      timer.timeFormated = (parseFloat(timer.timeFormated) + 2).toFixed(2);
-      timer.timeDisplayed = timer.timeFormated.concat('+');
-    }
-    if (inspectionPenality.value === 'DNF') {
-      penalitySelected.value = 'DNF';
-      timer.timeDisplayed = '('.concat(timer.timeFormated, ')', ' DNF');
-    }
-
-    timer.state = 'CONFIRM';
-    emits('playerChangeState', 'CONFIRMATION');
-
+    timeCompleted();
   };
 
 }
@@ -263,13 +332,7 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
           clearInterval(inspectionId.value);
         }
 
-        //Show timer with 0.01 precision.
-        const beginTime = Date.now();
-        timerIntervalId.value = setInterval(() => {
-          const timeNow = Date.now();
-          timer.realTime = timeNow - beginTime;
-          timer.timeDisplayed = timeForHuman(timer.realTime);
-        }, 10);
+        timerFiredDisplay();
 
         break;
       case 'RUNNING':
@@ -277,7 +340,7 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
   }
 
   //Timer can be stopped by any key.
-  if (timer.state === 'CONFIRM' && props.inputMode === 'KEYBOARD') {
+  if (props.inputMode === 'KEYBOARD' && timer.state === 'CONFIRM') {
     //User touch up screen so is safe to unlock button after 0.3s.
     if (!onConfirmTouchUp.value) {
       setTimeout(() => {
@@ -287,18 +350,22 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
     }
   }
 
-  if (props.inputMode === 'MANUALLY' &&
+  //Manually and timer managment
+  if ((props.inputMode === 'MANUALLY' || props.inputMode === 'STACKMAT') &&
     (!(event instanceof KeyboardEvent) || (event instanceof KeyboardEvent && event.code === 'Space'))
   ) {
     switch (timer.state) {
       case 'BEGIN_STATE':
         if (props.activeInspection) {
-          beginInspection();
+          if (props.inputMode === 'MANUALLY' ||
+            (props.inputMode === 'STACKMAT' && stackmatData.value?.timeInMilliseconds === 0)) {
+            beginInspection();
+          }
         }
         break;
-      //For fast event: the user can space one more time to skip the all inspection.
+      //For fast event in MANUALLY MODE: the user can space one more time to skip the all inspection.
       case 'INSPECTION':
-        if (props.activeInspection) {
+        if (props.inputMode === 'MANUALLY' && props.activeInspection) {
           clearInterval(inspectionId.value);
           timer.state = 'CONFIRM';
           emits('playerChangeState', 'CONFIRMATION');
@@ -343,7 +410,8 @@ const beginInspection = () => {
   emits('playerChangeState', 'INSPECTING');
   timer.timeDisplayed = inspectionValue.value.toString();
 
-  if (props.inputMode === 'KEYBOARD') {
+  //Inspection logic keyboard = stackmat.
+  if (props.inputMode === 'KEYBOARD' || props.inputMode === 'STACKMAT') {
     inspectionId.value = setInterval(async () => {
       if (inspectionValue.value > 0) {
         inspectionValue.value--;
@@ -378,10 +446,54 @@ const beginInspection = () => {
 };
 
 /**
+ * Display and refresh the timer when running.
+ */
+const timerFiredDisplay = () => {
+  //Show timer with 0.01 precision.
+  timer.beginTimeStamp = performance.now();
+  timerIntervalId.value = setInterval(() => {
+    const timeNow = performance.now();
+    timer.realTime = timeNow - timer.beginTimeStamp;
+    timer.timeDisplayed = timeForHuman(timer.realTime);
+  }, 10);
+
+}
+
+/**
+ * When the time is completed (stop the timer)
+ * @param packet need to give packet if stackmat mode.
+ */
+const timeCompleted = (packet?: Packet) => {
+  clearInterval(timerIntervalId.value);
+  if (packet) {
+    timer.realTime = packet.timeInMilliseconds;
+    timer.timeDisplayed = timeForHuman(packet.timeInMilliseconds);
+  } else {
+    //final time not depend of setInterval() accuracy.
+    timer.realTime = performance.now() - timer.beginTimeStamp;
+  }
+
+  timer.timeFormated = timer.timeDisplayed;
+
+  if (inspectionPenality.value === 'PLUS_2') {
+    //ms
+    timer.realTime += 2000;
+    timer.timeFormated = (parseFloat(timer.timeFormated) + 2).toFixed(2);
+    timer.timeDisplayed = timer.timeFormated.concat('+');
+  }
+  if (inspectionPenality.value === 'DNF') {
+    penalitySelected.value = 'DNF';
+    timer.timeDisplayed = '('.concat(timer.timeFormated, ')', ' DNF');
+  }
+
+  timer.state = 'CONFIRM';
+  emits('playerChangeState', 'CONFIRMATION');
+}
+/**
  * Buisness logic when time is confirmed.
  */
 const saveTime = () => {
-  if (props.inputMode === 'KEYBOARD') {
+  if (props.inputMode === 'KEYBOARD' || props.inputMode === 'STACKMAT') {
     onConfirmTouchUp.value = false;
     buttonLabel.value = "En attente des joueurs";
 
@@ -484,6 +596,17 @@ watch(() => penalitySelected.value, async (newVal) => {
   }
 });
 
+watch(() => props.inputMode, async (newMode, oldMode) => {
+  if (newMode === 'STACKMAT' && oldMode !== 'STACKMAT') {
+    timer.timeDisplayed = '--:--';
+    stackmat.start();
+  }
+
+  if (newMode !== 'STACKMAT' && oldMode === 'STACKMAT') {
+    //stop but keep events.
+    stackmat.stop();
+  }
+})
 
 onBeforeUnmount(() => {
   //fix #55
@@ -496,6 +619,10 @@ onBeforeUnmount(() => {
   document.getElementById('timer')!.removeEventListener('touchend', timerUpManager);
   document.getElementById('timer')!.removeEventListener('touchstart', timerDownManager);
   document.getElementById('timer')!.removeEventListener('contextmenu', handlecontextMenu);
+
+  //Stop + disconnect all event.
+  stackmat.off();
+
 });
 
 </script>

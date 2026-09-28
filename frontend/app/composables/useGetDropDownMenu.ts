@@ -8,6 +8,7 @@ import type { DropdownMenuItem } from '@nuxt/ui/runtime/components/DropdownMenu.
 import type { Socket } from 'socket.io-client';
 import type { Reactive } from 'vue';
 import { allAudiosInspection } from '~/constants/constants';
+import type { Mode } from '~~/shared/types/solve';
 
 /**
  * Give the dropdownMenu option
@@ -23,7 +24,7 @@ import { allAudiosInspection } from '~/constants/constants';
 export const useGetDropDownMenu = (
   readyHoldingTime: Ref<number>,
   inspection: Ref<boolean>,
-  inputMode: Ref<'KEYBOARD' | 'MANUALLY'>,
+  inputMode: Ref<Mode>,
   audioForInspection: Ref<
     [string, string, HTMLAudioElement?, HTMLAudioElement?]
   >,
@@ -49,7 +50,7 @@ export const useGetDropDownMenu = (
   const menuForEveryone: DropdownMenuItem[][] = [
     [
       {
-        label: `Mode du chronomètre (${inputMode.value === 'KEYBOARD' ? 'Clavier/Touch' : 'Manuel'})`,
+        label: `Mode du chronomètre (${inputMode.value === 'KEYBOARD' ? 'Clavier/Touch' : inputMode.value === 'MANUALLY' ? 'Manuel' : 'Timer filaire'})`,
         icon: 'lucide:keyboard',
         children: [
           {
@@ -62,6 +63,12 @@ export const useGetDropDownMenu = (
             label: 'Manuel',
             onSelect: () => {
               inputMode.value = 'MANUALLY';
+            },
+          },
+          {
+            label: 'Timer Filaire',
+            onSelect: () => {
+              inputMode.value = 'STACKMAT';
             },
           },
         ],

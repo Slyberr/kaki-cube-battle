@@ -72,3 +72,5 @@ export const mapEvent = new Map<
 ]);
 
 export type Penality = 'NONE' | 'PLUS_2' | 'DNF';
+
+export type Mode = 'KEYBOARD' | 'MANUALLY' | 'STACKMAT'; 

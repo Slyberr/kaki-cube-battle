@@ -10,7 +10,11 @@
  * @returns 
  */
 export const timeForHuman = (initialTime: number) : string => {
-  const timeToConvert = initialTime / 1000;
+  
+  //if 2.459 -> 2.45 not 2.46. 
+  let timeToConvert = (Math.floor(initialTime /10));
+  timeToConvert /= 100;
+  
   const min = Math.floor(timeToConvert / 60);
 
   return min == 0
