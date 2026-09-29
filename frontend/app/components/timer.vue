@@ -184,10 +184,9 @@ onMounted(() => {
     //Stop fonction
     if (stackmatData.value?.status === ' ' && packet.status === 'I') {
       timeCompleted(packet);
-
+      onConfirmTouchUp.value = true;
       if (!onConfirmTouchUp.value) {
         setTimeout(() => {
-          onConfirmTouchUp.value = true;
           inspectionValue.value = 15;
         }, 300);
       }
@@ -342,10 +341,12 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
   //Timer can be stopped by any key.
   if (props.inputMode === 'KEYBOARD' && timer.state === 'CONFIRM') {
     //User touch up screen so is safe to unlock button after 0.3s.
+    inspectionValue.value = 15;
     if (!onConfirmTouchUp.value) {
+     
       setTimeout(() => {
         onConfirmTouchUp.value = true;
-        inspectionValue.value = 15;
+        
       }, 300);
     }
   }

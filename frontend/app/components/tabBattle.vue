@@ -50,7 +50,7 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
                     
                     return h(resolveComponent('UModal'), { title: `Historique du solve n° ${cell.getValue()}` }, {
 
-                        default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: "secondary", class: 'flex text-cyan-500 justify-center w-full min-h-full', label: (cell.getValue() as number).toString() }),
+                        default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'secondary', class: 'flex text-cyan-500 justify-center w-full min-h-full', label: (cell.getValue() as number).toString() }),
                         body: () => h('div', { class: 'flex-col' }, [
                             h('div', { class: 'text-sm max-h-30 overflow-y-scroll bg-secondary-700/40 rounded-xl p-2' }, solve?.data.scramble),
                             h('div', { class: 'flex w-full' }, [
@@ -100,7 +100,7 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
             },
             meta: {
                 class: {
-                    th: player.socketId === props.me.socketId ? "text-primary" : "text-neutral",
+                    th: player.socketId === props.me.socketId ? 'text-primary' : 'text-neutral',
                     td: 'min-w-42',
 
                 },

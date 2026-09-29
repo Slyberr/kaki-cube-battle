@@ -45,18 +45,20 @@
     <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
 
       <UTooltip :disabled="dropDownMenuEnabled" text="Les options sont activées quand tous le monde est 'prêt'.">
-        <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
+        <UButton variant="ghost" class="self-start mx-4" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
       </UTooltip>
     </UDropdownMenu>
 
 
-    <div v-if="me && showPage && room" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full  ">
-      <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
-        :solve-id="room.actualSolveId" :me="me" , :event="room.event" />
+    <div class="flex tools-container w-full justify-center">
+      <div v-if="me && showPage && room"
+        class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full mx-2 lg:mx-4 gap-2 ">
+        <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
+          :solve-id="room.actualSolveId" :me="me" , :event="room.event" />
 
-      <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
+        <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
+      </div>
     </div>
-
   </div>
 
 
