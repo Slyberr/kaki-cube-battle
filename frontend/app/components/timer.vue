@@ -209,6 +209,10 @@ onMounted(() => {
   });
   //options local session storage.
   if (props.inputMode === 'STACKMAT') {
+     toast.add({
+      title : 'Mode StackMat Gen5 activé :',
+      description : 'Si aucun chiffre de s\'affiche, rechargez la page ou changer de mode jusqu\'a voir "0.00".'
+    })
     timer.timeDisplayed = '--:--';
     stackmat.start();
   }
@@ -610,7 +614,13 @@ watch(() => penalitySelected.value, async (newVal) => {
 watch(() => props.inputMode, async (newMode, oldMode) => {
   if (newMode === 'STACKMAT' && oldMode !== 'STACKMAT') {
     timer.timeDisplayed = '--:--';
+    toast.add({
+      title : 'Mode StackMat Gen5 activé :',
+      description : 'Si aucun chiffre de s\'affiche, rechargez la page ou changer de mode jusqu\'a voir "0.00".'
+    })
+   
     stackmat.start();
+    
     return;
   }
 
