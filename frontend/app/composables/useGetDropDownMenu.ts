@@ -8,6 +8,7 @@ import type { DropdownMenuItem } from '@nuxt/ui/runtime/components/DropdownMenu.
 import type { Socket } from 'socket.io-client';
 import type { Reactive } from 'vue';
 import { allAudiosInspection } from '~/constants/constants';
+import type { Mode } from '~~/shared/types/solve';
 
 /**
  * Give the dropdownMenu option
@@ -23,7 +24,7 @@ import { allAudiosInspection } from '~/constants/constants';
 export const useGetDropDownMenu = (
   readyHoldingTime: Ref<number>,
   inspection: Ref<boolean>,
-  inputMode: Ref<'KEYBOARD' | 'MANUALLY'>,
+  inputMode: Ref<Mode>,
   audioForInspection: Ref<
     [string, string, HTMLAudioElement?, HTMLAudioElement?]
   >,
@@ -49,7 +50,7 @@ export const useGetDropDownMenu = (
   const menuForEveryone: DropdownMenuItem[][] = [
     [
       {
-        label: `Mode du chronomètre (${inputMode.value === 'KEYBOARD' ? 'Clavier/Touch' : 'Manuel'})`,
+        label: `Mode du chronomètre (${inputMode.value === 'KEYBOARD' ? 'Clavier/Touch' : inputMode.value === 'MANUALLY' ? 'Manuel' : 'Stack GEN5'})`,
         icon: 'lucide:keyboard',
         children: [
           {
@@ -61,7 +62,13 @@ export const useGetDropDownMenu = (
           {
             label: 'Manuel',
             onSelect: () => {
-              inputMode.value = 'MANUALLY';
+              inputMode.value = 'MANUALLY';     
+            },
+          },
+          {
+            label: 'Stack GEN5',
+            onSelect: () => {
+              inputMode.value = 'STACKMAT';
             },
           },
         ],
@@ -299,7 +306,7 @@ export const useGetDropDownMenu = (
   }
 
   if (
-    options.holding &&
+    options.holding !== undefined &&
     options.inspection.key &&
     options.mode &&
     options.inspection.activate !== undefined
@@ -307,9 +314,8 @@ export const useGetDropDownMenu = (
     options.holding = readyHoldingTime.value;
     options.inspection.activate = inspection.value;
     options.mode = inputMode.value;
-   
+
     options.inspection.key = audioForInspection.value[0];
-    
 
     //update localstorage
     localStorage.setItem('options', JSON.stringify(options));

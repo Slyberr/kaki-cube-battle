@@ -6,11 +6,23 @@
 
 /**
  * This function can translate a timestamp in ms to a MM:SS:cS Format.
- * @param initialTime the (initial) time to translate
+ * @param time the  time to translate
+ * @param isMsRoundUp if true, the res need to be rounded up if ms digit >=5 (ex: 10.489 -> 10.49). If not, 10.489 = 10.48 (time truncted like WCA)
  * @returns 
  */
-export const timeForHuman = (initialTime: number) : string => {
-  const timeToConvert = initialTime / 1000;
+export const timeForHuman = (time: number, isMsRoundUp : boolean) : string => {
+  
+  let timeToConvert = time;
+  //if 2.459 -> 2.45 not 2.46. 
+  if (!isMsRoundUp) {
+    timeToConvert = (Math.floor(time /10));
+    timeToConvert /= 100;
+  } else {
+    timeToConvert /= 1000;
+  }
+   
+ 
+  
   const min = Math.floor(timeToConvert / 60);
 
   return min == 0

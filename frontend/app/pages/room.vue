@@ -22,21 +22,20 @@
         <h1 class="text-3xl">{{ room.roomname }}</h1>
 
         <p v-if="me.owner">(Vous <i class="text-primary"> gérez </i> cette salle)</p>
-        <p class="text-2xl text-muted">{{ puzzle }}</p>
+        <p class="text-2xl text-secondary-400">{{ puzzle }}</p>
         <div class="flex justify-center w-full h-37" :class="room.event === '777' || room.event === '666'
-            ? 'h-42 max-[400px]:h-54'
-            : room.event === 'minx' || room.event.includes('555')
-              ? 'max-[1000px]:h-35'
-              : 'max-[1000px]:h-25'">
+          ? 'h-42 max-[400px]:h-54'
+          : room.event === 'minx' || room.event.includes('555')
+            ? 'max-[1000px]:h-35'
+            : 'max-[1000px]:h-25'">
 
           <p class="w-[95%] sm:w-[90%] md:w-[80%] lg:w-[70%] xl:w-[55%] 2xl:w-[50%]"
             :class="room.event === '777' || room.event === '666' || room.event === 'minx' || room.event.includes('555') ? 'text-md md:text-lg 2xl:text-xl' : 'text-lg md:text-xl 2xl:text-2xl'">
             {{ scrambleLabel }}</p>
         </div>
         <div class="flex justify-center w-full">
-          <Timer  :ready-holding-time="readyHoldingTime"
-            :active-inspection="inspection" :input-mode="inputMode" :audios="audiosForInspection" :me="me"
-            @player-change-state="(state: PlayerState) => changeState(state)"
+          <Timer :ready-holding-time="readyHoldingTime" :active-inspection="inspection" :input-mode="inputMode"
+            :audios="audiosForInspection" :me="me" @player-change-state="(state: PlayerState) => changeState(state)"
             @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
         </div>
       </div>
@@ -46,18 +45,20 @@
     <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
 
       <UTooltip :disabled="dropDownMenuEnabled" text="Les options sont activées quand tous le monde est 'prêt'.">
-        <UButton variant="ghost" class="self-start m-2" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
+        <UButton variant="ghost" class="self-start mx-4" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
       </UTooltip>
     </UDropdownMenu>
 
 
-    <div v-if="me && showPage && room" class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full">
-      <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
-        :solve-id="room.actualSolveId" :me="me" :event="room.event" />
+    <div class="flex tools-container w-full justify-center">
+      <div v-if="me && showPage && room"
+        class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full mx-2 lg:mx-4 gap-2 ">
+        <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
+          :solve-id="room.actualSolveId" :me="me" :event="room.event" />
 
-      <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
+        <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
+      </div>
     </div>
-
   </div>
 
 
@@ -84,7 +85,7 @@ const room = reactive<ClientRoom>(
     roomname: '',
     players: [],
     actualSolveId: 0,
-    allSolves: [{ solveId: 0 ,data : {scramble : ''}}],
+    allSolves: [{ solveId: 0, data: { scramble: '' } }],
     actualScramble: '',
     event: '333'
   }
@@ -102,7 +103,7 @@ const readyHoldingTime = ref<number>(0.3);
 const inspection = ref<boolean>(false);
 const audiosForInspection = ref<[string, string, HTMLAudioElement?, HTMLAudioElement?]>(['rien', 'Rien']);
 
-const inputMode = ref<'KEYBOARD' | 'MANUALLY'>('KEYBOARD');
+const inputMode = ref<Mode>('KEYBOARD');
 const drawer = ref<TwistyPlayer>();
 const showPage = ref<boolean>(false);
 
@@ -139,7 +140,7 @@ onMounted(() => {
 
 
   if (json) {
-    inputMode.value = (json.mode === 'MANUALLY' || json.mode === 'KEYBOARD') ? json.mode : 'KEYBOARD';
+    inputMode.value = (json.mode === 'MANUALLY' || json.mode === 'KEYBOARD' || json.mode === 'STACKMAT') ? json.mode : 'KEYBOARD';
     readyHoldingTime.value = (json.holding < 1) ? json.holding : 0.3;
     inspection.value = (json.inspection.activate === true || json.inspection.activate === false) ? json.inspection.activate : false;
     audiosForInspection.value = allAudiosInspection.get(json.inspection.key) ?? allAudiosInspection.get('rien')!;
@@ -183,7 +184,7 @@ onMounted(() => {
         }
 
         //Scenario : i'm new player but the room already begin 
-        room.allSolves = info.room.allSolves.length === 1 && info.room.allSolves[0]?.solveId === 0 ? [{ solveId: 0,data : {scramble : ''} }] : info.room.allSolves;
+        room.allSolves = info.room.allSolves.length === 1 && info.room.allSolves[0]?.solveId === 0 ? [{ solveId: 0, data: { scramble: '' } }] : info.room.allSolves;
         room.actualSolveId = info.room.actualSolveId;
         puzzle.value = mapEvent.get(room.event)?.toDisplay ?? '';
       }
@@ -282,7 +283,7 @@ onMounted(() => {
       room.event = info.event;
       scrambleLabel.value = room.actualScramble;
 
-      room.allSolves = [{ solveId: 0,data : {scramble : ''} }];
+      room.allSolves = [{ solveId: 0, data: { scramble: '' } }];
       room.actualSolveId = 1;
 
       //Maj twisty
@@ -293,7 +294,7 @@ onMounted(() => {
   });
 
   socket.on('session-cleaned', () => {
-    room.allSolves = [{ solveId: 0, data : {scramble : ''} }];
+    room.allSolves = [{ solveId: 0, data: { scramble: '' } }];
     room.actualSolveId = 1;
   });
 

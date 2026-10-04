@@ -1,5 +1,7 @@
+import type { Mode } from "./solve"
+
 export type ClientOptions = {
-    mode : 'KEYBOARD' | 'MANUALLY',
+    mode : Mode,
     holding : number,
     inspection : {
         activate : boolean,
