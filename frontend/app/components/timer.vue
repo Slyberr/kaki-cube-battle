@@ -2,10 +2,8 @@
   <div id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[40%] xl:w-[35%] 2xl:w-[30%]"
     :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none'">
 
-
     <!--if Keyboard mode-->
     <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
-
 
       <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
         {{
@@ -64,14 +62,13 @@
       <template v-else>
         <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center" @submit="saveTime">
           <UFormField>
-            <UInput v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
-              maxlength="6" :disabled="manualTime.disabled" />
+            <UInput id="input-timer" v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
+              maxlength="6" :disabled="manualTime.disabled" :ui="{base : 'input-timer'}" />
           </UFormField>
           <UButton type="submit" class="text-xs" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel">
           </UButton>
         </UForm>
         <p>{{ "Votre temps est : " + isTimeFormatOk(manualTime.input)[1] }}</p>
-
       </template>
     </div>
   </div>
@@ -184,10 +181,11 @@ onMounted(() => {
     //Stop fonction
     if (stackmatData.value?.status === ' ' && packet.status === 'I') {
       timeCompleted(packet);
-      onConfirmTouchUp.value = true;
+      inspectionValue.value = 15;
+      
       if (!onConfirmTouchUp.value) {
         setTimeout(() => {
-          inspectionValue.value = 15;
+          onConfirmTouchUp.value = true;
         }, 300);
       }
     }
@@ -389,7 +387,7 @@ const onKeyDownEnter = (event: KeyboardEvent) => {
 
   if ((event.code === 'Enter' || event.code === 'NumpadEnter') &&
     (
-      (timer.state === 'CONFIRM' && (props.inputMode === 'KEYBOARD' || (props.inputMode === 'MANUALLY' && props.activeInspection))) ||
+      (timer.state === 'CONFIRM' && (props.inputMode === 'KEYBOARD' || props.inputMode ===  'STACKMAT' || (props.inputMode === 'MANUALLY' && props.activeInspection))) ||
       (props.inputMode === 'MANUALLY' && !props.activeInspection && timer.state === 'BEGIN_STATE')
     ) &&
     (event.target as HTMLElement).tagName !== 'INPUT') {
@@ -455,7 +453,7 @@ const timerFiredDisplay = () => {
   timerIntervalId.value = setInterval(() => {
     const timeNow = performance.now();
     timer.realTime = timeNow - timer.beginTimeStamp;
-    timer.timeDisplayed = timeForHuman(timer.realTime);
+    timer.timeDisplayed = timeForHuman(timer.realTime,false);
   }, 10);
 
 }
@@ -468,10 +466,13 @@ const timeCompleted = (packet?: Packet) => {
   clearInterval(timerIntervalId.value);
   if (packet) {
     timer.realTime = packet.timeInMilliseconds;
-    timer.timeDisplayed = timeForHuman(packet.timeInMilliseconds);
+    timer.timeDisplayed = timeForHuman(packet.timeInMilliseconds,false);
   } else {
+
     //final time not depend of setInterval() accuracy.
     timer.realTime = performance.now() - timer.beginTimeStamp;
+    timer.timeDisplayed = timeForHuman(timer.realTime,false);
+    
   }
 
   timer.timeFormated = timer.timeDisplayed;
@@ -505,6 +506,7 @@ const saveTime = () => {
     emits('time-sended', timer.realTime, inspectionPenality.value, penalitySelected.value);
     timer.state = 'WAITING_OTHER';
     inspectionPenality.value = 'NONE';
+    timer.realTime = 0;
   }
 
   if (props.inputMode === 'MANUALLY') {
@@ -524,6 +526,7 @@ const saveTime = () => {
       inspectionValue.value = 15;
       timer.state = 'WAITING_OTHER';
       inspectionPenality.value = 'NONE';
+      
     } else {
 
       toast.add({
@@ -571,6 +574,13 @@ watch(() => props.me.state, async (newState, oldState) => {
     penalitySelected.value = 'NONE';
     buttonLabel.value = 'Confirmer';
     manualTime.disabled = false;
+    if (props.inputMode === 'MANUALLY') {
+      //Focus for to avoid user click.
+      const input = document.getElementById('input-timer');
+      if (input) {
+        setTimeout(() => input.focus());
+      }
+    } 
   }
 });
 
@@ -601,11 +611,14 @@ watch(() => props.inputMode, async (newMode, oldMode) => {
   if (newMode === 'STACKMAT' && oldMode !== 'STACKMAT') {
     timer.timeDisplayed = '--:--';
     stackmat.start();
+    return;
   }
 
   if (newMode !== 'STACKMAT' && oldMode === 'STACKMAT') {
     //stop but keep events.
+    timer.timeDisplayed = '0.00';
     stackmat.stop();
+    return;
   }
 })
 
