@@ -4,7 +4,7 @@
 
     <!--if Keyboard mode-->
     <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
-
+    
       <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
         {{
           timer.timeDisplayed }}</div>
@@ -97,7 +97,6 @@ const props = defineProps<{
 const timer = reactive<{
   realTime: number,
   beginTimeStamp: number,
-  timeFormated: string,
   timeDisplayed: string,
   state: 'BEGIN_STATE' | 'INSPECTION' | 'READY_TO-SOLVE' | 'RUNNING' | 'CONFIRM' | 'WAITING_OTHER',
   color: string,
@@ -105,7 +104,6 @@ const timer = reactive<{
 }>
   ({
     timeDisplayed: '0.00',
-    timeFormated: '0.00',
     realTime: 0.00,
     beginTimeStamp: 0,
     state: 'BEGIN_STATE',
@@ -479,17 +477,14 @@ const timeCompleted = (packet?: Packet) => {
     
   }
 
-  timer.timeFormated = timer.timeDisplayed;
-
   if (inspectionPenality.value === 'PLUS_2') {
     //ms
     timer.realTime += 2000;
-    timer.timeFormated = (parseFloat(timer.timeFormated) + 2).toFixed(2);
-    timer.timeDisplayed = timer.timeFormated.concat('+');
+    timer.timeDisplayed = timeForHuman(timer.realTime,false).concat('+');
   }
   if (inspectionPenality.value === 'DNF') {
     penalitySelected.value = 'DNF';
-    timer.timeDisplayed = '('.concat(timer.timeFormated, ')', ' DNF');
+    timer.timeDisplayed = '('.concat(timeForHuman(timer.realTime,false), ')', ' DNF');
   }
 
   timer.state = 'CONFIRM';
@@ -549,7 +544,6 @@ const retry = () => {
   timer.state = 'BEGIN_STATE';
   timer.realTime = 0.00;
   timer.timeDisplayed = '0.00';
-  timer.timeFormated = '0.00';
   inspectionValue.value = 15;
   inspectionPenality.value = 'NONE';
   penalitySelected.value = 'NONE';
@@ -594,19 +588,21 @@ watch(() => props.me.state, async (newState, oldState) => {
 watch(() => penalitySelected.value, async (newVal) => {
   //If DNF at Inspection : No button enabled (DNF value is selected).
   if (inspectionPenality.value !== 'DNF') {
+    const actualTimeToString = timeForHuman(timer.realTime,false);
+
     if (newVal === 'PLUS_2' && timer.state === 'CONFIRM') {
       timer.timeDisplayed = inspectionPenality.value === 'PLUS_2'
-        ? (parseFloat(timer.timeFormated) + 2).toFixed(2).concat('++')
-        : (parseFloat(timer.timeFormated) + 2).toFixed(2).concat('+');
+        ? (timeForHuman(timer.realTime + 2000,false).concat('++'))
+        : (timeForHuman(timer.realTime + 2000,false).concat('+'));
     }
     if (newVal === 'DNF' && timer.state === 'CONFIRM') {
-      timer.timeDisplayed = '('.concat(timer.timeFormated, ')', ' DNF');
+      timer.timeDisplayed = '('.concat(actualTimeToString, ')', ' DNF');
     }
 
     if (newVal === 'NONE' && timer.state === 'CONFIRM') {
       timer.timeDisplayed = inspectionPenality.value === 'PLUS_2'
-        ? timer.timeFormated.concat('+')
-        : timer.timeFormated;
+        ? actualTimeToString.concat('+')
+        : actualTimeToString;
     }
   }
 });
