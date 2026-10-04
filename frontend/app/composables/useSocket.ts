@@ -28,7 +28,7 @@ export const useSocket = () => {
      const jsontoStringify = JSON.parse(haveOptions ?? '');
       if (
         !jsontoStringify.mode ||
-        !jsontoStringify.holding ||
+        jsontoStringify.holding === undefined ||
         !jsontoStringify.inspection.key ||
         (jsontoStringify.inspection.activate === undefined)
       ) {
