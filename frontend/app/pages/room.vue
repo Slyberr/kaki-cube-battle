@@ -1,12 +1,4 @@
 <template>
-
-  <UButton label="disconnect" @click="socket.io.engine.close()"></UButton>
-
-  <div class="flex flex-col">
-    <span>Socket ID : {{ socket.id }}</span>
-    <span>Connecté : {{ socket.connected }}</span>
-    <span>Récupéré : {{ socket.recovered }}</span>
-  </div>
   <UModal :open="openModal">
     <UButton color="primary" variant="ghost" label="Partir de la salle" icon="lucide:arrow-left"
       @click="openModal = true" />
@@ -84,6 +76,7 @@ import { Socket } from 'socket.io-client';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { TwistyPlayer } from 'cubing/twisty';
 import { allAudiosInspection } from '~/constants/constants';
+import { isVNode, type VNode } from 'vue';
 
 const socket: Socket = useSocket();
 
@@ -121,7 +114,14 @@ const twistyContainer = ref<HTMLElement | null>(null);
 const openModal = ref<boolean>(false);
 const canLeave = ref<boolean>(false);
 
-const banner = reactive({
+const banner = reactive<{
+  disconnected: boolean,
+  timeLeaved: number,
+  timeLeaveID: NodeJS.Timeout,
+  colorBanner: string,
+  icon: string,
+  label: string
+}>({
   disconnected: false,
   timeLeaved: 0,
   timeLeaveID: 0 as unknown as NodeJS.Timeout,
