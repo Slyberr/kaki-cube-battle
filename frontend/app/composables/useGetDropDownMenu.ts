@@ -50,7 +50,7 @@ export const useGetDropDownMenu = (
   const menuForEveryone: DropdownMenuItem[][] = [
     [
       {
-        label: `Mode du chronomètre (${inputMode.value === 'KEYBOARD' ? 'Clavier/Touch' : inputMode.value === 'MANUALLY' ? 'Manuel' : 'Stack GEN5'})`,
+        label: `Mode du chronomètre (${inputMode.value === 'KEYBOARD' ? 'Clavier/Touch' : inputMode.value === 'MANUALLY' ? 'Manuel' : 'Stack GEN5 (expérimental)'})`,
         icon: 'lucide:keyboard',
         children: [
           {
@@ -66,7 +66,7 @@ export const useGetDropDownMenu = (
             },
           },
           {
-            label: 'Stack GEN5',
+            label: 'Stack GEN5 (expérimental)',
             onSelect: () => {
               inputMode.value = 'STACKMAT';
             },

@@ -10,7 +10,7 @@
          <div id="area-of-chat">
             <div class="flex flex-col mb-2 text-sm pt-2 pl-2" v-for="msg in conv">
                <div class="flex gap-1">
-                  <div class="text-gray-700">{{ '[' + msg.date + ']' }}</div>
+                  <div class="text-gray-700">{{ '[' + toZoneTime(msg.date) + ']' }}</div>
                   <div :class="msg.pseudo === props.me.pseudo ?  'text-primary-500' : ''"><i>{{ msg.pseudo === props.me.pseudo ? 'Vous ' : msg.pseudo }}</i></div>
                   <div><i>{{ msg.pseudo === props.me.pseudo ? 'avez' : 'a' }}</i></div>
                   <div><i>dit:</i></div>

@@ -85,13 +85,15 @@
 import type { RadioGroupItem } from '@nuxt/ui';
 import { Stackmat, type Packet } from 'stackmat';
 import type { Mode } from '~~/shared/types/solve';
+import { Socket } from 'socket.io-client';
 
 const props = defineProps<{
   readyHoldingTime: number,
   activeInspection: boolean,
   inputMode: Mode,
   audios: [string, string, HTMLAudioElement?, HTMLAudioElement?],
-  me: ClientPlayer
+  me: ClientPlayer,
+  socket : Socket
 }>();
 
 const timer = reactive<{
@@ -161,7 +163,6 @@ onMounted(() => {
   }
    
   stackmat.on('timerConnected', (packet: Packet) => {
-    console.log('connected')
     timer.timeDisplayed = '0.00'
   });
 

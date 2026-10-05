@@ -51,12 +51,7 @@ export const leaveRoom = (
     if (roomToManage.players.length < 1) {
       //Socket.io auto-deleting if no one left.
       rooms.delete(roomname);
-      console.info(
-        'room',
-        roomname,
-        'deleted. rooms status :',
-        Array.from(rooms.keys()),
-      );
+      console.info(`Salle ${roomname} SUPPRIMÉE. Nouveau statut des salles : ${Array.from(rooms.keys())}`);
     } else {
 
       //Select a new room owner if the leaver was owner
@@ -69,7 +64,7 @@ export const leaveRoom = (
     
       //Stop display the leaver player and update the room.
       io.to(roomname).emit('remove-player', convertPlayersForClient(roomToManage.players), mySocket.id);
-      console.info(`${playerName} left the room ${roomname}. Remaning ${roomNoLeaver.length} players`);
+      console.info(`${playerName} est parti de la salle ${roomname}. Il reste ${roomNoLeaver.length} joueur${roomNoLeaver.length > 1 ? 's' : ''}`);
     }
     //Update rooms
     io.emit('get-rooms', displayRoomsForHomePage(rooms));

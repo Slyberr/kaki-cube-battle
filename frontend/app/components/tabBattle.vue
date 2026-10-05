@@ -208,7 +208,7 @@ const currentAvg = (avgOf: 5 | 12 | 50 | 100 | 200, playerId: string) => {
     const nbrWorsts = nbrBests;
 
     //have enough solves
-    if (props.solves.filter((solve) => solve[playerId]).length >= avgOf) {
+    if (props.solves.length >= avgOf) {
         const currentsSolves = props.solves.slice(0, avgOf);
         //A player solve can be undefined (leave) === DNF
         const nbOfDNF = currentsSolves.filter(

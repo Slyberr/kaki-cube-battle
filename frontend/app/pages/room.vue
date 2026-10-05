@@ -1,5 +1,12 @@
 <template>
 
+  <UButton label="disconnect" @click="socket.io.engine.close()"></UButton>
+
+  <div class="flex flex-col">
+    <span>Socket ID : {{ socket.id }}</span>
+    <span>Connecté : {{ socket.connected }}</span>
+    <span>Récupéré : {{ socket.recovered }}</span>
+  </div>
   <UModal :open="openModal">
     <UButton color="primary" variant="ghost" label="Partir de la salle" icon="lucide:arrow-left"
       @click="openModal = true" />
@@ -13,8 +20,8 @@
       </div>
     </template>
   </UModal>
-  <UBanner v-if="disconnectBanner" icon="lucide:unplug" class="bg-error/30"
-    title="Attention, vous avez été déconnecté. Rechargez la page !" />
+  <UBanner v-if="banner.disconnected" :icon="banner.icon" :class="banner.colorBanner" class="my-4"
+    :title="banner.label" />
   <div class="flex flex-col">
 
     <div v-if="me && room" class="flex flex-col items-center gap-4 w-full">
@@ -36,6 +43,7 @@
         <div class="flex justify-center w-full">
           <Timer :ready-holding-time="readyHoldingTime" :active-inspection="inspection" :input-mode="inputMode"
             :audios="audiosForInspection" :me="me" @player-change-state="(state: PlayerState) => changeState(state)"
+            :socket="socket"
             @time-sended="(time: number, inspectionPenality: string, penalitySelected: string) => sendTime(time, inspectionPenality, penalitySelected)" />
         </div>
       </div>
@@ -109,9 +117,18 @@ const showPage = ref<boolean>(false);
 
 const twistyContainer = ref<HTMLElement | null>(null);
 
-const disconnectBanner = ref<boolean>(false);
+
 const openModal = ref<boolean>(false);
 const canLeave = ref<boolean>(false);
+
+const banner = reactive({
+  disconnected: false,
+  timeLeaved: 0,
+  timeLeaveID: 0 as unknown as NodeJS.Timeout,
+  colorBanner: 'bg-warning/80',
+  icon: 'lucide:unplug',
+  label: '',
+})
 
 const dropDownMenuEnabled = computed(() => room.players.every((player) => player.state === 'READY'));
 const dropDownItems = computed((): DropdownMenuItem[][] => {
@@ -150,8 +167,36 @@ onMounted(() => {
   socket.emit('i-want-room-data');
 
   socket.on('disconnect', () => {
-    disconnectBanner.value = true;
+    banner.label = `Essai de reconnexion en cours depuis ${banner.timeLeaved}s.`;
+    banner.timeLeaveID = setInterval(() => {
+      banner.timeLeaved++;
+      banner.label = `Essai de reconnexion en cours depuis ${banner.timeLeaved}s.`;
+    }, 1000)
+    banner.disconnected = true;;
+    banner.icon = 'lucide:unplug';
+    banner.colorBanner = 'bg-warning/90';
+
   });
+
+  socket.on('connect', () => {
+    if (socket.recovered) {
+
+      banner.icon = 'lucide:check';
+      banner.colorBanner = 'bg-primary/90';
+      banner.label = 'Reconnexion réussie !'
+      setTimeout(() => {
+        banner.disconnected = false;
+
+      }, (2000));
+      socket.emit('i-want-room-data');
+    } else {
+      banner.icon = 'lucide:globe-off';
+      banner.colorBanner = 'bg-error/90';
+      banner.label = `Impossible de se reconnecter, veuillez recharger la page.`;
+    }
+    clearInterval(banner.timeLeaveID);
+    banner.timeLeaved = 0;
+  })
 
   socket.on('send-all-room-data', async (info: { room: ClientRoom, error: boolean }) => {
     if (!info.error) {
@@ -184,18 +229,18 @@ onMounted(() => {
         }
 
         //Scenario : i'm new player but the room already begin 
-        room.allSolves = info.room.allSolves.length === 1 && info.room.allSolves[0]?.solveId === 0 ? [{ solveId: 0, data: { scramble: '' } }] : info.room.allSolves;
+        room.allSolves = info.room.actualSolveId === 1 ? [{ solveId: 0, data: { scramble: '' } }] : info.room.allSolves;
         room.actualSolveId = info.room.actualSolveId;
         puzzle.value = mapEvent.get(room.event)?.toDisplay ?? '';
       }
 
     } else {
-      //It's happend when a user comeback to page with next arrow navigation.
+      //It's happend when a user comeback to page with next/prev arrow navigation.
       //Leave room continue on OnBeforeRouteLeave()
       canLeave.value = true;
       toast.add({
         title: 'Impossible de rejoindre !',
-        description: 'Vous ne pouvez pas rejoindre une salle par URL, même publique.',
+        description: 'Vous ne pouvez rejoindre une salle que par l\'accueil.',
         duration: 5000
       })
       return navigateTo('/home');
@@ -207,20 +252,21 @@ onMounted(() => {
       const wasOwner = me.owner;
 
       room.players = players;
-      const tempMe = players.find((player) => player.socketId === socket.id)!
-      me.owner = tempMe.owner;
-      me.pseudo = tempMe.pseudo;
-      me.socketId = tempMe.socketId;
-      me.state = tempMe.state;
+      const tempMe = players.find((player: ClientPlayer) => player.socketId === socket.id)
+      if (tempMe) {
+        me.owner = tempMe.owner;
+        me.pseudo = tempMe.pseudo;
+        me.socketId = tempMe.socketId;
+        me.state = tempMe.state;
 
-      if (me.owner && !wasOwner) {
-        toast.add({
-          title: 'Le modérateur de salle est parti.',
-          description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
-          duration: 5000
-        })
+        if (me.owner && !wasOwner) {
+          toast.add({
+            title: 'Le modérateur de salle s\'est déconnecté.',
+            description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
+            duration: 5000
+          })
+        }
       }
-
     }
   });
 
@@ -245,7 +291,7 @@ onMounted(() => {
 
     if (me.owner && !wasOwner) {
       toast.add({
-        title: 'Le modérateur de salle est parti.',
+        title: 'Le modérateur de salle s\'est déconnecté.',
         description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
         duration: 5000
       })
@@ -315,7 +361,7 @@ const leaveRoom = async () => {
 
 };
 
-onBeforeRouteLeave((to, from) => {
+onBeforeRouteLeave(() => {
   //when click on yes to leave
   if (canLeave.value) {
     if (room.roomname) {

@@ -26,13 +26,7 @@ export const roomOfSession = (socket : Socket,rooms : Map<string,ServerRoom>) : 
       //Player try to come back, affect a the new socket.id
       if (!playerInRoom.actualSocketId) {
         playerInRoom.actualSocketId = socket.id;
-        //If time was submit and waiting others state when disconnected + still the same solve.
-        if (playerInRoom.state === 'SCORED' && room.currentSolve[socket.handshake.auth.sessionid]?.time) {
-          playerInRoom.state = 'SCORED';
-        } else {
-          playerInRoom.state = 'READY';
-        }
-
+       
         isTabAlreadyOpen = false;
         socket.join(room.roomname);
       } else {
