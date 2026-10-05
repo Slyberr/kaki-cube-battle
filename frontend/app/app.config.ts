@@ -38,13 +38,6 @@ export default defineAppConfig({
       slots : {
         title : 'pointer-events-none'
       }
-    },
-    banner : {
-      slots : {
-        title: 'text-red-400/80 text-xs sm:text-sm ',
-        icon : 'bg-red-400/80'
-      }
-      
     }
   },
 });
