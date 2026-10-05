@@ -31,7 +31,9 @@ const rooms: Map<string, ServerRoom> = new Map();
 const min = 30;
 setInterval(
   () => {
-    console.log('\x1b[32m------------------Rooms status log------------------\x1b[0m');
+    console.log(
+      '\x1b[32m------------------Debut log server------------------\x1b[0m',
+    );
     rooms.forEach((room) => {
       let playerToPurge: string[] = [];
       if (room.players.length > 0) {
@@ -48,7 +50,7 @@ setInterval(
             });
             playerToPurge.push(player.sessionId);
             console.info(
-              `session of ${player.pseudo} on ${room.roomname}'s room is expired : ${(Date.now() - player.expiration) / 1000}s > ${min * 60}s.`,
+              `La session de ${player.pseudo} sur la salle ${room.roomname} est expirée : ${(Date.now() - player.expiration) / 1000}s > ${min * 60}s.`,
             );
           }
         });
@@ -63,20 +65,21 @@ setInterval(
         //Room empty not deleted because the last one just close tab
         rooms.delete(room.roomname);
         console.info(
-          `${room.roomname}'s room deleted -> \n The last one disconnected and never coming back before expiration`,
+          `La salle ${room.roomname} a été supprimée -> \n Le dernier est parti sans avoir pu/voulu se reconnecter`,
         );
       } else {
-        console.info(`${room.roomname}'s room.`);
-        console.info('Players lefts : ');
+        console.info(`SALLE ${room.roomname}.`);
+        console.info('Joueurs restants : ');
         room.players.forEach((player) =>
           console.info(
-            player.pseudo,
-            player.actualSocketId ? '(active)' : '(inactive)',
+            `- ${player.pseudo} ${player.actualSocketId ? '(actif)' : '(inactif)'}`,
           ),
         );
       }
     });
-    console.log('\x1b[32m------------------End rooms status log------------------\x1b[0m');
+    console.log(
+      '\x1b[32m------------------Fin log server------------------\x1b[0m',
+    );
     console.log('');
     //Can purge rooms each 10 mins.
   },
@@ -85,7 +88,10 @@ setInterval(
 
 export default defineNitroPlugin((nitroApp) => {
   const engine = new Engine();
-  const io: Server = new Server({ cors: corsOptions });
+  const io: Server = new Server({
+    cors: corsOptions,
+    connectionStateRecovery: { maxDisconnectionDuration: 1000 * 60 * 0.25 },
+  });
 
   io.bind(engine);
 
@@ -100,12 +106,12 @@ export default defineNitroPlugin((nitroApp) => {
       if (room && !tabAlreadyOpen) {
         //can come back if roomOfsession() affect a the new socketID.
         //if user call home.vue, just redirect on room.vue (will call anyway i-want-room-data)
-          socket.data.roomname = room.roomname;
-          socket.data.joiningRoom = true;
-          rooms.set(room.roomname, room);
+        socket.data.roomname = room.roomname;
+        socket.data.joiningRoom = true;
+        rooms.set(room.roomname, room);
 
-          socket.emit('go-to-room', { ok: true });
-          io.emit('get-rooms', displayRoomsForHomePage(rooms));
+        socket.emit('go-to-room', { ok: true });
+        io.emit('get-rooms', displayRoomsForHomePage(rooms));
       } else {
         if (tabAlreadyOpen) {
           socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
@@ -115,12 +121,7 @@ export default defineNitroPlugin((nitroApp) => {
     });
 
     //Player disconnected
-    socket.on('disconnect', () => {
-      // if (socket.data.roomname !== '') {
-      //   const roomname = socket.data.roomname;
-      //   leaveRoom(socket, roomname, rooms, io, true);
-      // }
-
+    socket.on('disconnect', (reason) => {
       const [room, _] = roomOfSession(socket, rooms);
 
       if (room) {
@@ -142,8 +143,11 @@ export default defineNitroPlugin((nitroApp) => {
                 }
               });
             }
-
+            
             socket.leave(room.roomname);
+            console.log(
+              `LOG : Le joueur ${player.pseudo} a été déco pour la raison suivante : ${reason} `,
+            );
 
             player.expiration = Date.now();
             rooms.set(room.roomname, room);
@@ -156,7 +160,7 @@ export default defineNitroPlugin((nitroApp) => {
         );
         io.emit('get-rooms', displayRoomsForHomePage(rooms));
         //If everyone in this room submit his time  (some players can be not here because can comeback)
-        //AND there is >= 1 active playerhttps://railway.com/project/121850fd-ddf1-4c1e-a016-9db322f28666?environmentId=a9ec7c60-81f1-45e0-9153-7f2b55b954fd
+        //AND there is >= 1 active player
 
         if (
           room.players.every(
@@ -200,14 +204,14 @@ export default defineNitroPlugin((nitroApp) => {
                 state: 'READY',
               },
             ],
-            currentSolve: { solveId: 0, data : {scramble : ''} },
-            allSolves: [{ solveId: 0, data: {scramble : ''} }],
+            currentSolve: { solveId: 0, data: { scramble: '' } },
+            allSolves: [{ solveId: 0, data: { scramble: '' } }],
             actualSolveId: 1,
             event: '333',
             actualScramble: (await randomScrambleForEvent('333')).toString(),
           });
           socket.emit('go-to-room', { ok: true });
-          console.info(info.pseudo + ' created ' + info.roomname + "'s room.");
+          console.info(`${info.pseudo} a crée la salle ${info.roomname}`);
         } else {
           if (room) {
             socket.emit('go-to-room', { ok: false, tabAlreadyOpen: true });
@@ -254,7 +258,7 @@ export default defineNitroPlugin((nitroApp) => {
             socket.data.joiningRoom = true;
             rooms.set(roomtoJoin.roomname, roomtoJoin);
             //redirect on room/[id].vue
-            console.info(info.pseudo + ' join this room: ' + info.roomname);
+            console.info(`${info.pseudo} a rejoint la salle ${info.roomname}`);
             socket.emit('go-to-room', { ok: true });
           }
         } else {
@@ -265,12 +269,18 @@ export default defineNitroPlugin((nitroApp) => {
       },
     );
 
-    //asked immediatly when playe entry on room/[id].vue
+    //asked immediatly when playe entry on /room
     socket.on('i-want-room-data', () => {
       const [room, tabAlreadyOpen] = roomOfSession(socket, rooms);
 
-      //comeback logic step 2 + join logic.
-      if (room && (!tabAlreadyOpen || socket.data.joiningRoom)) {
+      //Rules to entry room.vue (session ID is assigned of a room for each case) :
+      //1. no tab is already open (click on join room OR comeback with /room URL directly)
+      //2. Tab open BUT is joining room (comeback from /home -> redirect on /room -> i-want-room-data)
+      //3. Tab open, player is in room BUT try to comeback (not his fault)
+      if (
+        room &&
+        (!tabAlreadyOpen || socket.data.joiningRoom || socket.recovered)
+      ) {
         const player = room.players.find(
           (player) =>
             player.sessionId === socket.handshake.auth.sessionid &&
@@ -378,8 +388,8 @@ export default defineNitroPlugin((nitroApp) => {
       if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
         room.event = event;
-        room.currentSolve = { solveId: 0, data : {scramble : ''} };
-        room.allSolves = [{ solveId: 0, data : {scramble : ''} }];
+        room.currentSolve = { solveId: 0, data: { scramble: '' } };
+        room.allSolves = [{ solveId: 0, data: { scramble: '' } }];
         room.actualScramble = (await randomScrambleForEvent(event)).toString();
         room.actualSolveId = 1;
         rooms.set(roomname, room);
@@ -401,8 +411,8 @@ export default defineNitroPlugin((nitroApp) => {
       const roomname = socket.data.roomname;
       if (roomname && isOwner(socket, rooms, roomname)) {
         const room = rooms.get(roomname)!;
-        room.currentSolve = { solveId: 0 , data : {scramble : ''}};
-        room.allSolves = [{ solveId: 0, data : {scramble : ''} }];
+        room.currentSolve = { solveId: 0, data: { scramble: '' } };
+        room.allSolves = [{ solveId: 0, data: { scramble: '' } }];
         room.actualSolveId = 1;
         io.to(roomname).emit('session-cleaned');
       } else {
@@ -443,7 +453,7 @@ export default defineNitroPlugin((nitroApp) => {
 
     //Send a message to the room
     socket.on('send-message', (message: string) => {
-      const date = new Date();
+      const date = Date.now();
       const roomname = socket.data.roomname;
 
       if (roomname && rooms.has(roomname)) {
@@ -457,7 +467,7 @@ export default defineNitroPlugin((nitroApp) => {
           io.to(roomname).emit('get-message', {
             pseudo: player.pseudo,
             data: message,
-            date: `${date.getHours()}:${date.getMinutes() > 9 ? date.getMinutes() : '0' + date.getMinutes()}.${date.getSeconds() > 9 ? date.getSeconds() : '0' + date.getSeconds()}`,
+            date: date,
           });
         }
       }
