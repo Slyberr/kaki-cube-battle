@@ -89,7 +89,7 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
                 },
             },
             cell: ({ row, cell, }) => {
-                const solveId = row.getValue('solveId');
+                const solveId = row.getValue('solveId') as number;
                 return renderTimeCell(cell, solveId, player.socketId);
             }
         })
@@ -180,10 +180,10 @@ const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
             cellContent =
                 h(resolveComponent('UModal'), { title: `Modifier votre temps n° ${solveId}` }, {
 
-                    default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'neutral', class: `flex justify-center w-full min-h-full ${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}`, label: showFormatedTime(playerTime)}),
-                    body: () => h('div', { class: 'flex-col' },
-                        h(resolveComponent('UInput'), { 'onUpdate:modelValue': (val: string) => modifyInputValue.value = val, placeholder: 'Only Digits or DNF' },
-                            h(resolveComponent('UButton'), {
+                    default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'neutral', class: `flex justify-center w-full min-h-full ${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}`, label: showFormatedTime(playerTime) }),
+                    body: () => h('div', { class: 'flex flex-col w-full  items-center gap-2' }, [
+                        h(resolveComponent('UInput'), { 'onUpdate:modelValue': (val: string) => modifyInputValue.value = val, placeholder: 'Only Digits or DNF.', class : 'w-[50%]' }),
+                        h(resolveComponent('UButton'), {
                                 onClick: () => {
                                     const [ok, value] = isTimeFormatOk(modifyInputValue.value ?? '');
                                     if (ok) {
@@ -199,8 +199,10 @@ const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
                                     }
                                 }
                             },
-                                'ok')
-                        ))
+                                'Confirmer'),
+                        h(resolveComponent('span'),{},`Votre temps est : ${isTimeFormatOk(modifyInputValue.value ??'')[1]}` )
+                    ]
+                    )
                 });
         }
         return h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}` }, cellContent)
@@ -209,7 +211,7 @@ const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
     }
 
 
-    
+
 
 }
 
