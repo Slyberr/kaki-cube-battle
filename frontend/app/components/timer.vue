@@ -526,6 +526,7 @@ const saveTime = () => {
         description:
           "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
         duration: 5000,
+        icon : 'lucide:ban'
       });
     }
 

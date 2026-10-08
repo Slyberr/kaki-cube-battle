@@ -127,7 +127,7 @@ onMounted(() => {
     errorToast.add({
       title: 'Erreur !',
       description: data,
-
+      icon : 'lucide:x'
     });
   });
 
@@ -135,6 +135,7 @@ onMounted(() => {
     errorToast.add({
       title: 'Vous avez été exclu de la room.',
       description: data,
+      icon : 'lucide:user-x'
 
     });
     return navigateTo("/home");
