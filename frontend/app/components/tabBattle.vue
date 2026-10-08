@@ -84,7 +84,7 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
             },
             meta: {
                 class: {
-                    th: player.socketId === props.me.socketId ? 'text-primary' : 'text-neutral',
+                    th: player.socketId === props.me.socketId ? 'text-primary ' : 'text-neutral',
                     td: 'min-w-42',
                 },
             },
@@ -170,48 +170,53 @@ const renderSolveIdCell = (cell: any) => {
 //Render a 'time for player' cell.
 const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
     const playerTime = cell.getValue() as PlayerTime;
-    console.log(idPlayer === props.me.socketId);
     const canModifyCell = idPlayer === props.me.socketId;
     let cellContent: VNode | undefined = undefined;
-    if (playerTime) {
-        if (!canModifyCell) {
-            cellContent = h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}` }, showFormatedTime(playerTime))
-        } else {
-            cellContent =
-                h(resolveComponent('UModal'), { title: `Modifier votre temps n° ${solveId}` }, {
+    if (!canModifyCell) {
+        cellContent = h('div', {}, playerTime ? showFormatedTime(playerTime) : '')
+    } else {
+        cellContent =
+            h(resolveComponent('UModal'), { title: `Modifier votre temps n° ${solveId}` }, {
 
-                    default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'neutral', class: `flex justify-center w-full min-h-full ${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}`, label: showFormatedTime(playerTime) }),
-                    body: () => h('div', { class: 'flex flex-col w-full  items-center gap-2' }, [
-                        h(resolveComponent('UInput'), { 'onUpdate:modelValue': (val: string) => modifyInputValue.value = val, placeholder: 'Only Digits or DNF.', class : 'w-[50%]' }),
+                default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'neutral', class: `flex justify-center w-full h-full ${playerTime && playerTime.win ? 'text-primary-500' : 'text-gray-100'}`, label: playerTime ? showFormatedTime(playerTime) : '' }),
+                body: () => h('div', { class: 'flex flex-col w-full  items-center gap-2' }, [
+                    h(resolveComponent('UForm'), {class : 'flex flex-col w-full justify-center items-center gap-4'}, [
+
+                        h(resolveComponent('UInput'), { 'onUpdate:modelValue': (val: string) => modifyInputValue.value = val, placeholder: 'Only Digits or DNF.', class: 'w-[50%]' }),
                         h(resolveComponent('UButton'), {
-                                onClick: () => {
-                                    const [ok, value] = isTimeFormatOk(modifyInputValue.value ?? '');
-                                    if (ok) {
-                                        const [time, choosedPen] = onSendManualTime(value);
-                                        emits('time-revised', time, 'NONE', choosedPen);
-                                    } else {
-                                        toast.add({
-                                            title: 'Temps non envoyé',
-                                            description:
-                                                "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
-                                            duration: 5000,
-                                        })
-                                    }
+                            onClick: () => {
+
+                                const [ok, value] = isTimeFormatOk(modifyInputValue.value ?? '');
+
+                                if (ok) {
+                                    const [time, _] = onSendManualTime(value);
+                                    emits('time-revised', time, solveId);
+                                     toast.add({
+                                        title: 'Votre temps a été modifié',
+                                        icon : 'lucide:check'
+                                    })
+                                    modifyInputValue.value = '';
+                                } else {
+                                    toast.add({
+                                        title: 'Temps non envoyé',
+                                        description:
+                                            "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
+                                        duration: 5000,
+                                        icon : 'lucide:ban'
+                                    })
                                 }
                             },
-                                'Confirmer'),
-                        h(resolveComponent('span'),{},`Votre temps est : ${isTimeFormatOk(modifyInputValue.value ??'')[1]}` )
-                    ]
-                    )
-                });
-        }
-        return h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}` }, cellContent)
-    } else {
-        return ''
+                            type: 'submit'
+                        },
+                            'Confirmer'),
+                    ]),
+
+                    h(resolveComponent('span'), {}, `Votre temps est : ${isTimeFormatOk(modifyInputValue.value ?? '')[1]}`)
+                ]
+                )
+            });
     }
-
-
-
+    return h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'} flex justify-center items-center h-full` }, cellContent)
 
 }
 
