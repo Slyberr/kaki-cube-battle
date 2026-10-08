@@ -20,12 +20,13 @@ import type { EventID, PlayerTime, Solve } from '~~/shared/types/solve';
 import PlayerState from './PlayerState.vue';
 
 const props = defineProps<{ players: ClientPlayer[], solves: Solve[], solveId: number, me: ClientPlayer, event: EventID }>()
+const modifyInputValue = ref<string>();
+const toast = useToast();
+const emits = defineEmits(['time-revised']);
 
 type PlayerLite = Pick<ClientPlayer, 'socketId' | 'owner' | 'pseudo'>;
-
-
 provide('players', toRef(props, 'players'));
- 
+
 const playersNoState = computed<PlayerLite[]>((prev: PlayerLite[] | undefined) => {
     const next: PlayerLite[] = [];
     props.players.forEach((player) => {
@@ -36,13 +37,13 @@ const playersNoState = computed<PlayerLite[]>((prev: PlayerLite[] | undefined) =
         })
     });
     if (prev) {
-        for (let i = 0; i < next.length || i <prev.length; i++) {
+        for (let i = 0; i < next.length || i < prev.length; i++) {
             if (next[i]?.socketId !== prev[i]?.socketId) {
                 return next;
             }
         }
         return prev;
-    }else {
+    } else {
         return next
     }
 });
@@ -83,12 +84,13 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
             },
             meta: {
                 class: {
-                    th: player.socketId === props.me.socketId ? 'text-primary' : 'text-neutral',
+                    th: player.socketId === props.me.socketId ? 'text-primary ' : 'text-neutral',
                     td: 'min-w-42',
                 },
             },
-            cell: ({ cell }) => {
-                return renderTimeCell(cell)
+            cell: ({ row, cell, }) => {
+                const solveId = row.getValue('solveId') as number;
+                return renderTimeCell(cell, solveId, player.socketId);
             }
         })
     }
@@ -114,7 +116,7 @@ const renderPlayerHeader = (player: PlayerLite, playerStats: PlayerStats) => {
         [h('div', { class: 'text-center flex flex-col' }, [
 
             h('span', { class: player.socketId === props.me.socketId ? 'text-primary' : 'text-gray-100 ' }, (player.socketId === props.me.socketId ? 'Vous' : player.pseudo) + ` (${calcWins(player.socketId)})`),
-            h(PlayerState, {id : player.socketId}),
+            h(PlayerState, { id: player.socketId }),
             ...avgTab,
             h('span', { class: 'text-gray-100' }, 'mean: ' + playerStats.mean),
 
@@ -166,26 +168,69 @@ const renderSolveIdCell = (cell: any) => {
 }
 
 //Render a 'time for player' cell.
-const renderTimeCell = (cell: any) => {
+const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
     const playerTime = cell.getValue() as PlayerTime;
-    return h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'}` }, () => {
-        if (playerTime) {
+    const canModifyCell = idPlayer === props.me.socketId;
+    let cellContent: VNode | undefined = undefined;
+    if (!canModifyCell) {
+        cellContent = h('div', {}, playerTime ? showFormatedTime(playerTime) : '')
+    } else {
+        cellContent =
+            h(resolveComponent('UModal'), { title: `Modifier votre temps n° ${solveId}` }, {
 
-            const timeReadable = timeForHuman(playerTime.time,false);
-            if (playerTime.finalPenality === 'DNF') {
-                return `DNF(${timeReadable})`;
-            } else if (playerTime.finalPenality === '+2') {
-                return `${timeReadable}+`;
-            } else if (playerTime.finalPenality === '+4') {
-                return `${timeReadable}++`;
-            } else {
-                return timeReadable;
-            }
+                default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'neutral', class: `flex justify-center w-full h-full ${playerTime && playerTime.win ? 'text-primary-500' : 'text-gray-100'}`, label: playerTime ? showFormatedTime(playerTime) : '' }),
+                body: () => h('div', { class: 'flex flex-col w-full  items-center gap-2' }, [
+                    h(resolveComponent('UForm'), {class : 'flex flex-col w-full justify-center items-center gap-4'}, [
 
-        } else {
-            return '';
-        }
-    });
+                        h(resolveComponent('UInput'), { 'onUpdate:modelValue': (val: string) => modifyInputValue.value = val, placeholder: 'Only Digits or DNF.', class: 'w-[50%]' }),
+                        h(resolveComponent('UButton'), {
+                            onClick: () => {
+
+                                const [ok, value] = isTimeFormatOk(modifyInputValue.value ?? '');
+
+                                if (ok) {
+                                    const [time, _] = onSendManualTime(value);
+                                    emits('time-revised', time, solveId);
+                                     toast.add({
+                                        title: 'Votre temps a été modifié',
+                                        icon : 'lucide:check'
+                                    })
+                                    modifyInputValue.value = '';
+                                } else {
+                                    toast.add({
+                                        title: 'Temps non envoyé',
+                                        description:
+                                            "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
+                                        duration: 5000,
+                                        icon : 'lucide:ban'
+                                    })
+                                }
+                            },
+                            type: 'submit'
+                        },
+                            'Confirmer'),
+                    ]),
+
+                    h(resolveComponent('span'), {}, `Votre temps est : ${isTimeFormatOk(modifyInputValue.value ?? '')[1]}`)
+                ]
+                )
+            });
+    }
+    return h('div', { class: `${playerTime?.win ? 'text-primary-500' : 'text-gray-100'} flex justify-center items-center h-full` }, cellContent)
+
+}
+
+const showFormatedTime = (playerTime: PlayerTime) => {
+    const timeReadable = timeForHuman(playerTime.time, false);
+    if (playerTime.finalPenality === 'DNF') {
+        return `DNF(${timeReadable})`;
+    } else if (playerTime.finalPenality === '+2') {
+        return `${timeReadable}+`;
+    } else if (playerTime.finalPenality === '+4') {
+        return `${timeReadable}++`;
+    } else {
+        return timeReadable;
+    }
 }
 
 const mean = (playerId: string) => {
@@ -198,7 +243,7 @@ const mean = (playerId: string) => {
             timeCumul += playerSolve.time;
         }
     }
-    return timeCumul === 0 ? 'DNF' : timeForHuman((timeCumul / countWithNoDNF),true);
+    return timeCumul === 0 ? 'DNF' : timeForHuman((timeCumul / countWithNoDNF), true);
 };
 
 //Retourne the current avg
@@ -225,7 +270,7 @@ const currentAvg = (avgOf: 5 | 12 | 50 | 100 | 200, playerId: string) => {
             solvesToCalc.forEach((solve) => {
                 timeCumul += solve[playerId]?.time;
             })
-            return timeForHuman(timeCumul / (avgOf - nbrBests - nbrWorsts),true);
+            return timeForHuman(timeCumul / (avgOf - nbrBests - nbrWorsts), true);
         }
 
     } else {

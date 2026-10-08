@@ -91,7 +91,8 @@ const sendMail = async() => {
         waiting.value = false;
         toast.add({
             title : 'Retour envoyé !',
-            description : message
+            description : message,
+            icon : 'lucide:mail-check'
         });
     } else {
         buttonSend.text = 'Envoyer';
@@ -101,7 +102,8 @@ const sendMail = async() => {
         toast.add({
             title : 'Erreur Serveur.',
             description : message,
-            duration: 7000
+            duration: 7000,
+            icon : 'lucide:database-x'
         });
     }
 }

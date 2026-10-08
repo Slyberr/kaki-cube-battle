@@ -8,20 +8,20 @@ import { ServerPlayer } from '../../type';
 
 /**
  * Return  a solve data with [sessionID :string] key converted into [socketID : string] key for client side
- * @param currentSolve
+ * @param solve
  * @param players
  * @returns
  */
 export const convertSolveForClient = (
-  currentSolve: Solve,
+  solve: Solve,
   players: ServerPlayer[],
 ) => {
   const res: Solve = {
-    solveId: currentSolve.solveId,
-    data: { scramble: currentSolve?.data?.scramble ?? '' },
+    solveId: solve.solveId,
+    data: { scramble: solve?.data?.scramble ?? '' },
   };
 
-  for (const [key, value] of Object.entries(currentSolve)) {
+  for (const [key, value] of Object.entries(solve)) {
     players.forEach((player) => {
       if ((key as any) === player.sessionId && player.actualSocketId) {
         res[player.actualSocketId] = value;

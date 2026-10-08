@@ -4,7 +4,7 @@
 
     <!--if Keyboard mode-->
     <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
-    
+
       <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
         {{
           timer.timeDisplayed }}</div>
@@ -62,8 +62,8 @@
       <template v-else>
         <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center" @submit="saveTime">
           <UFormField>
-            <UInput id="input-timer" v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'." color="primary"
-              maxlength="6" :disabled="manualTime.disabled" :ui="{base : 'input-timer'}" />
+            <UInput id="input-timer" v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'."
+              color="primary" maxlength="6" :disabled="manualTime.disabled" :ui="{ base: 'input-timer' }" />
           </UFormField>
           <UButton type="submit" class="text-xs" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel">
           </UButton>
@@ -93,7 +93,7 @@ const props = defineProps<{
   inputMode: Mode,
   audios: [string, string, HTMLAudioElement?, HTMLAudioElement?],
   me: ClientPlayer,
-  socket : Socket
+  socket: Socket
 }>();
 
 const timer = reactive<{
@@ -161,7 +161,7 @@ onMounted(() => {
     timer.color = 'text-muted';
 
   }
-   
+
   stackmat.on('timerConnected', (packet: Packet) => {
     timer.timeDisplayed = '0.00'
   });
@@ -181,7 +181,7 @@ onMounted(() => {
     if (stackmatData.value?.status === ' ' && packet.status === 'I') {
       timeCompleted(packet);
       inspectionValue.value = 15;
-      
+
       if (!onConfirmTouchUp.value) {
         setTimeout(() => {
           onConfirmTouchUp.value = true;
@@ -208,9 +208,9 @@ onMounted(() => {
   });
   //options local session storage.
   if (props.inputMode === 'STACKMAT') {
-     toast.add({
-      title : 'Mode StackMat Gen5 activé :',
-      description : 'Si aucun chiffre de s\'affiche, rechargez la page ou changer de mode jusqu\'a voir "0.00".'
+    toast.add({
+      title: 'Mode StackMat Gen5 activé :',
+      description: 'Si aucun chiffre de s\'affiche, rechargez la page ou changer de mode jusqu\'a voir "0.00".'
     })
     timer.timeDisplayed = '--:--';
     stackmat.start();
@@ -344,10 +344,10 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
     //User touch up screen so is safe to unlock button after 0.3s.
     inspectionValue.value = 15;
     if (!onConfirmTouchUp.value) {
-     
+
       setTimeout(() => {
         onConfirmTouchUp.value = true;
-        
+
       }, 300);
     }
   }
@@ -390,7 +390,7 @@ const onKeyDownEnter = (event: KeyboardEvent) => {
 
   if ((event.code === 'Enter' || event.code === 'NumpadEnter') &&
     (
-      (timer.state === 'CONFIRM' && (props.inputMode === 'KEYBOARD' || props.inputMode ===  'STACKMAT' || (props.inputMode === 'MANUALLY' && props.activeInspection))) ||
+      (timer.state === 'CONFIRM' && (props.inputMode === 'KEYBOARD' || props.inputMode === 'STACKMAT' || (props.inputMode === 'MANUALLY' && props.activeInspection))) ||
       (props.inputMode === 'MANUALLY' && !props.activeInspection && timer.state === 'BEGIN_STATE')
     ) &&
     (event.target as HTMLElement).tagName !== 'INPUT') {
@@ -456,7 +456,7 @@ const timerFiredDisplay = () => {
   timerIntervalId.value = setInterval(() => {
     const timeNow = performance.now();
     timer.realTime = timeNow - timer.beginTimeStamp;
-    timer.timeDisplayed = timeForHuman(timer.realTime,false);
+    timer.timeDisplayed = timeForHuman(timer.realTime, false);
   }, 10);
 
 }
@@ -469,23 +469,23 @@ const timeCompleted = (packet?: Packet) => {
   clearInterval(timerIntervalId.value);
   if (packet) {
     timer.realTime = packet.timeInMilliseconds;
-    timer.timeDisplayed = timeForHuman(packet.timeInMilliseconds,false);
+    timer.timeDisplayed = timeForHuman(packet.timeInMilliseconds, false);
   } else {
 
     //final time not depend of setInterval() accuracy.
     timer.realTime = performance.now() - timer.beginTimeStamp;
-    timer.timeDisplayed = timeForHuman(timer.realTime,false);
-    
+    timer.timeDisplayed = timeForHuman(timer.realTime, false);
+
   }
 
   if (inspectionPenality.value === 'PLUS_2') {
     //ms
     timer.realTime += 2000;
-    timer.timeDisplayed = timeForHuman(timer.realTime,false).concat('+');
+    timer.timeDisplayed = timeForHuman(timer.realTime, false).concat('+');
   }
   if (inspectionPenality.value === 'DNF') {
     penalitySelected.value = 'DNF';
-    timer.timeDisplayed = '('.concat(timeForHuman(timer.realTime,false), ')', ' DNF');
+    timer.timeDisplayed = '('.concat(timeForHuman(timer.realTime, false), ')', ' DNF');
   }
 
   timer.state = 'CONFIRM';
@@ -513,28 +513,23 @@ const saveTime = () => {
     const [isOk, timeFormated] = isTimeFormatOk(manualTime.input);
 
     if (isOk) {
-      if (timeFormated === 'DNF') {
-        emits('time-sended', 0, 'NONE', 'DNF');
-      } else {
-
-        const time = inputTimeToTimestamp(timeFormated);
-
-        emits('time-sended', time, 'NONE', 'NONE');
-      }
+      const [time, choosedPen] = onSendManualTime(timeFormated);
+      emits('time-sended', time, 'NONE', choosedPen);
       manualTime.input = '';
       manualTime.disabled = true;
       inspectionValue.value = 15;
       timer.state = 'WAITING_OTHER';
       inspectionPenality.value = 'NONE';
-      
     } else {
-
       toast.add({
         title: 'Temps non envoyé',
-        description: "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
-        duration: 5000
+        description:
+          "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
+        duration: 5000,
+        icon : 'lucide:ban'
       });
     }
+
   }
 };
 
@@ -579,7 +574,7 @@ watch(() => props.me.state, async (newState, oldState) => {
       if (input) {
         setTimeout(() => input.focus());
       }
-    } 
+    }
   }
 });
 
@@ -589,12 +584,12 @@ watch(() => props.me.state, async (newState, oldState) => {
 watch(() => penalitySelected.value, async (newVal) => {
   //If DNF at Inspection : No button enabled (DNF value is selected).
   if (inspectionPenality.value !== 'DNF') {
-    const actualTimeToString = timeForHuman(timer.realTime,false);
+    const actualTimeToString = timeForHuman(timer.realTime, false);
 
     if (newVal === 'PLUS_2' && timer.state === 'CONFIRM') {
       timer.timeDisplayed = inspectionPenality.value === 'PLUS_2'
-        ? (timeForHuman(timer.realTime + 2000,false).concat('++'))
-        : (timeForHuman(timer.realTime + 2000,false).concat('+'));
+        ? (timeForHuman(timer.realTime + 2000, false).concat('++'))
+        : (timeForHuman(timer.realTime + 2000, false).concat('+'));
     }
     if (newVal === 'DNF' && timer.state === 'CONFIRM') {
       timer.timeDisplayed = '('.concat(actualTimeToString, ')', ' DNF');
@@ -612,12 +607,12 @@ watch(() => props.inputMode, async (newMode, oldMode) => {
   if (newMode === 'STACKMAT' && oldMode !== 'STACKMAT') {
     timer.timeDisplayed = '--:--';
     toast.add({
-      title : 'Mode StackMat Gen5 activé :',
-      description : 'Si aucun chiffre de s\'affiche, rechargez la page ou changer de mode jusqu\'a voir "0.00".'
+      title: 'Mode StackMat Gen5 activé :',
+      description: 'Si aucun chiffre de s\'affiche, rechargez la page ou changer de mode jusqu\'a voir "0.00".'
     })
-   
+
     stackmat.start();
-    
+
     return;
   }
 
