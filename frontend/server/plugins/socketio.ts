@@ -17,6 +17,7 @@ import { ServerRoom } from '../type';
 import { convertSolveForClient } from '../utils/convert/convertSolveForClient';
 import { convertPlayersForClient } from '../utils/convert/convertPlayersForClient';
 import { isSessionExpired } from '../utils/verif/isSessionExpired';
+import { PlayerTime } from '~~/shared/types/solve';
 
 const corsOptions: CorsOptions = {
   origin: '*',
@@ -143,7 +144,7 @@ export default defineNitroPlugin((nitroApp) => {
                 }
               });
             }
-            
+
             socket.leave(room.roomname);
             console.log(
               `LOG : Le joueur ${player.pseudo} a été déco pour la raison suivante : ${reason} `,
@@ -380,6 +381,33 @@ export default defineNitroPlugin((nitroApp) => {
         }
       },
     );
+
+    // If player want to modify a time.
+    socket.on('time-revised', (time: number, solveId: number) => {
+      const roomname = socket.data.roomname;
+      
+      if (roomname && rooms.has(roomname)) {
+        const room = rooms.get(roomname)!;
+        const player = room.players.find(
+          (player) =>
+            player.sessionId === socket.handshake.auth.sessionid &&
+            player.actualSocketId === socket.id,
+        );
+        const solveToUpdate = room.allSolves.findIndex((solve) => solve.solveId === solveId);
+        if (player && solveToUpdate >= 0 && room.allSolves[solveToUpdate]) {
+          console.log('avant',room.allSolves);
+          room.allSolves[solveToUpdate][player.sessionId] = {time: time, finalPenality : 'OK',win : false} as PlayerTime;
+           console.log('après',room.allSolves);
+          //Update wins.
+          setBestTime(room.allSolves[solveToUpdate],true); 
+          io.to(roomname).emit(
+            'refresh-tab',
+            convertSolveForClient(room.allSolves[solveToUpdate],room.players)
+          );
+          rooms.set(roomname, room);
+        }
+      }
+    });
 
     //when event is updated
     socket.on('update-event', async (event: EventID) => {

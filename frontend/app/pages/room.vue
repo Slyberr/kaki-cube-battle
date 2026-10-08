@@ -54,7 +54,8 @@
       <div v-if="me && showPage && room"
         class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full mx-2 lg:mx-4 gap-2 ">
         <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
-          :solve-id="room.actualSolveId" :me="me" :event="room.event" />
+          :solve-id="room.actualSolveId" :me="me" :event="room.event" 
+          @time-revised="(time : number,solveId : number) => socket.emit('time-revised',time,solveId)"/>
 
         <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
       </div>
@@ -76,7 +77,6 @@ import { Socket } from 'socket.io-client';
 import type { DropdownMenuItem } from '@nuxt/ui';
 import { TwistyPlayer } from 'cubing/twisty';
 import { allAudiosInspection } from '~/constants/constants';
-import { isVNode, type VNode } from 'vue';
 
 const socket: Socket = useSocket();
 
@@ -241,7 +241,8 @@ onMounted(() => {
       toast.add({
         title: 'Impossible de rejoindre !',
         description: 'Vous ne pouvez rejoindre une salle que par l\'accueil.',
-        duration: 5000
+        duration: 5000,
+        icon : 'lucide:ban'
       })
       return navigateTo('/home');
     }
@@ -263,7 +264,8 @@ onMounted(() => {
           toast.add({
             title: 'Le modérateur de salle s\'est déconnecté.',
             description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
-            duration: 5000
+            duration: 5000,
+            icon : 'lucide:user-shield'
           })
         }
       }
@@ -293,7 +295,8 @@ onMounted(() => {
       toast.add({
         title: 'Le modérateur de salle s\'est déconnecté.',
         description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
-        duration: 5000
+        duration: 5000,
+        icon : 'lucide:user-shield'
       })
     }
   });
@@ -338,6 +341,15 @@ onMounted(() => {
     }
 
   });
+
+
+  //when a solve is updated
+  socket.on('refresh-tab', (data : Solve) => {
+    const index = room.allSolves.findIndex((solve) => solve.solveId === data.solveId);
+    if (index >= 0 && room.allSolves[index]) {
+      room.allSolves[index] = data;
+    }
+  })
 
   socket.on('session-cleaned', () => {
     room.allSolves = [{ solveId: 0, data: { scramble: '' } }];

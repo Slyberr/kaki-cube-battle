@@ -27,7 +27,7 @@ export const everyoneScored = async (
       await randomScrambleForEvent(room?.event ?? '333')
     ).toString();
 
-    setBestTime(room.currentSolve);
+    setBestTime(room.currentSolve,false);
 
     //Each new row is the first row.
     if (room.actualSolveId === 1) {
