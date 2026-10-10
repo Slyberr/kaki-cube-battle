@@ -395,9 +395,7 @@ export default defineNitroPlugin((nitroApp) => {
         );
         const solveToUpdate = room.allSolves.findIndex((solve) => solve.solveId === solveId);
         if (player && solveToUpdate >= 0 && room.allSolves[solveToUpdate]) {
-          console.log('avant',room.allSolves);
           room.allSolves[solveToUpdate][player.sessionId] = {time: time, finalPenality : 'OK',win : false} as PlayerTime;
-           console.log('après',room.allSolves);
           //Update wins.
           setBestTime(room.allSolves[solveToUpdate],true); 
           io.to(roomname).emit(
