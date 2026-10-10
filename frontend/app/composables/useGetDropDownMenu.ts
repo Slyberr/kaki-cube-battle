@@ -124,7 +124,6 @@ export const useGetDropDownMenu = (
         children: [
           {
             label: `Activer/Désactiver (${inspection.value ? 'Activée' : 'Désactivée'})`,
-            disabled: basicOptionsEnabled.value === false,
             onSelect: () => {
               inspection.value = !inspection.value;
             },
@@ -132,7 +131,7 @@ export const useGetDropDownMenu = (
           {
             label: `Son pour l'inspection (${audioForInspection.value[1]})`,
             icon: 'lucide:volume-2',
-            disabled: !inspection.value && basicOptionsEnabled.value === false,
+            disabled: !inspection.value,
             children: [
               {
                 label: 'Rien',

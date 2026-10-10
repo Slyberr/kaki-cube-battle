@@ -53,7 +53,7 @@
         class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full mx-2 lg:mx-4 gap-2 ">
         <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
           :solve-id="room.actualSolveId" :me="me" :event="room.event"
-          @time-revised="(time: number, solveId: number) => socket.emit('time-revised', time, solveId)" />
+          @time-revised="(time: number, penality : Penality, solveId: number) => socket.emit('time-revised', penality === 'DNF' ? 0 : time, penality,solveId)" />
 
         <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
       </div>
