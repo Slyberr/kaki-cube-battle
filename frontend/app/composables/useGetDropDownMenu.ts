@@ -16,6 +16,8 @@ import type { Mode } from '~~/shared/types/solve';
  * @param inspection
  * @param inputMode
  * @param audioForInspection
+ * @param basicOptionsEnabled
+ * @param mostAdminOptionsEnabled
  * @param socket
  * @param room
  * @param me
@@ -28,6 +30,8 @@ export const useGetDropDownMenu = (
   audioForInspection: Ref<
     [string, string, HTMLAudioElement?, HTMLAudioElement?]
   >,
+  basicOptionsEnabled: Ref<Boolean>,
+  mostAdminOptionsEnabled: Ref<Boolean>,
   socket: Socket,
   room: Reactive<ClientRoom>,
   me: Reactive<ClientPlayer>,
@@ -50,8 +54,15 @@ export const useGetDropDownMenu = (
   const menuForEveryone: DropdownMenuItem[][] = [
     [
       {
+        description: 'Cliquez 2 fois en dehors du menu pour en partir',
+        disabled: true,
+      },
+    ],
+    [
+      {
         label: `Mode du chronomètre (${inputMode.value === 'KEYBOARD' ? 'Clavier/Touch' : inputMode.value === 'MANUALLY' ? 'Manuel' : 'Stack GEN5 (expérimental)'})`,
         icon: 'lucide:keyboard',
+        disabled: basicOptionsEnabled.value === false,
         children: [
           {
             label: 'Clavier (barre espace)/Touch (mobile)',
@@ -62,7 +73,7 @@ export const useGetDropDownMenu = (
           {
             label: 'Manuel',
             onSelect: () => {
-              inputMode.value = 'MANUALLY';     
+              inputMode.value = 'MANUALLY';
             },
           },
           {
@@ -76,7 +87,8 @@ export const useGetDropDownMenu = (
       {
         label: `Rester appuyer pendant... (${readyHoldingTime.value}s)`,
         icon: 'lucide:clock-check',
-        disabled: inputMode.value === 'MANUALLY',
+        disabled:
+          inputMode.value !== 'KEYBOARD' || basicOptionsEnabled.value === false,
         children: [
           {
             label: '0 seconde (déclencher dès la touche pressée)',
@@ -107,10 +119,12 @@ export const useGetDropDownMenu = (
       {
         label: `Inspection (${inspection.value ? 'Activée' : 'Désactivée'})`,
         icon: 'lucide:hourglass',
+        disabled: basicOptionsEnabled.value === false,
 
         children: [
           {
             label: `Activer/Désactiver (${inspection.value ? 'Activée' : 'Désactivée'})`,
+            disabled: basicOptionsEnabled.value === false,
             onSelect: () => {
               inspection.value = !inspection.value;
             },
@@ -118,7 +132,7 @@ export const useGetDropDownMenu = (
           {
             label: `Son pour l'inspection (${audioForInspection.value[1]})`,
             icon: 'lucide:volume-2',
-            disabled: !inspection.value,
+            disabled: !inspection.value && basicOptionsEnabled.value === false,
             children: [
               {
                 label: 'Rien',
@@ -184,6 +198,7 @@ export const useGetDropDownMenu = (
       {
         label: "Changer d'épreuve",
         icon: 'lucide:puzzle',
+        disabled: mostAdminOptionsEnabled.value === false,
 
         children: [
           [
@@ -292,6 +307,7 @@ export const useGetDropDownMenu = (
       {
         label: 'Réinitialiser la session',
         icon: 'lucide:brush-cleaning',
+        disabled: mostAdminOptionsEnabled.value === false,
         onSelect: () => {
           socket.emit('clear-session');
         },
