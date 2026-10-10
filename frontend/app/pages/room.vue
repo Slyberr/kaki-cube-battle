@@ -40,13 +40,11 @@
         </div>
       </div>
 
-      <div id="twisty-container" class="flex w-full justify-end " />
+      <div id="twisty-container" class="flex w-full justify-end" />
     </div>
-    <UDropdownMenu v-if="showPage" :items="dropDownItems" :disabled="!dropDownMenuEnabled">
+    <UDropdownMenu v-if="showPage" :items="dropDownItems" >
 
-      <UTooltip :disabled="dropDownMenuEnabled" text="Les options sont activées quand tous le monde est 'prêt'.">
-        <UButton variant="ghost" class="self-start mx-4" icon="lucide:settings" :disabled="!dropDownMenuEnabled" />
-      </UTooltip>
+      <UButton variant="ghost" class="self-start mx-4" icon="lucide:settings" />
     </UDropdownMenu>
 
 
@@ -54,8 +52,8 @@
       <div v-if="me && showPage && room"
         class="grid grid-cols-1 lg:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_1fr] w-full mx-2 lg:mx-4 gap-2 ">
         <TabBattle class="grow-8" v-if="room.players.length > 0" :players="room.players" :solves="room.allSolves"
-          :solve-id="room.actualSolveId" :me="me" :event="room.event" 
-          @time-revised="(time : number,solveId : number) => socket.emit('time-revised',time,solveId)"/>
+          :solve-id="room.actualSolveId" :me="me" :event="room.event"
+          @time-revised="(time: number, solveId: number) => socket.emit('time-revised', time, solveId)" />
 
         <Tchatbox class="grow min-w-0" :me="me" :socket="socket" :roomname="room.roomname" />
       </div>
@@ -110,7 +108,6 @@ const showPage = ref<boolean>(false);
 
 const twistyContainer = ref<HTMLElement | null>(null);
 
-
 const openModal = ref<boolean>(false);
 const canLeave = ref<boolean>(false);
 
@@ -130,13 +127,17 @@ const banner = reactive<{
   label: '',
 })
 
-const dropDownMenuEnabled = computed(() => room.players.every((player) => player.state === 'READY'));
+const basicOptionsEnabled = computed(() => me.state === 'READY' || me.state === 'SCORED');
+const mostAdminOptionsEnabled = computed(() => me.owner === true && room.players.every((player) => player.state === 'READY'));
+
 const dropDownItems = computed((): DropdownMenuItem[][] => {
   return useGetDropDownMenu(
     readyHoldingTime,
     inspection,
     inputMode,
     audiosForInspection,
+    basicOptionsEnabled,
+    mostAdminOptionsEnabled,
     socket,
     room,
     me
@@ -242,7 +243,7 @@ onMounted(() => {
         title: 'Impossible de rejoindre !',
         description: 'Vous ne pouvez rejoindre une salle que par l\'accueil.',
         duration: 5000,
-        icon : 'lucide:ban'
+        icon: 'lucide:ban'
       })
       return navigateTo('/home');
     }
@@ -265,7 +266,7 @@ onMounted(() => {
             title: 'Le modérateur de salle s\'est déconnecté.',
             description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
             duration: 5000,
-            icon : 'lucide:user-shield'
+            icon: 'lucide:user-shield'
           })
         }
       }
@@ -296,7 +297,7 @@ onMounted(() => {
         title: 'Le modérateur de salle s\'est déconnecté.',
         description: 'Vous êtes maintenant le modérateur ! De nouvelles options sont disponibles.',
         duration: 5000,
-        icon : 'lucide:user-shield'
+        icon: 'lucide:user-shield'
       })
     }
   });
@@ -344,7 +345,7 @@ onMounted(() => {
 
 
   //when a solve is updated
-  socket.on('refresh-tab', (data : Solve) => {
+  socket.on('refresh-tab', (data: Solve) => {
     const index = room.allSolves.findIndex((solve) => solve.solveId === data.solveId);
     if (index >= 0 && room.allSolves[index]) {
       room.allSolves[index] = data;
