@@ -17,7 +17,7 @@ import { ServerRoom } from '../type';
 import { convertSolveForClient } from '../utils/convert/convertSolveForClient';
 import { convertPlayersForClient } from '../utils/convert/convertPlayersForClient';
 import { isSessionExpired } from '../utils/verif/isSessionExpired';
-import { PlayerTime } from '~~/shared/types/solve';
+import { Penality, PlayerTime } from '~~/shared/types/solve';
 
 const corsOptions: CorsOptions = {
   origin: '*',
@@ -383,7 +383,7 @@ export default defineNitroPlugin((nitroApp) => {
     );
 
     // If player want to modify a time.
-    socket.on('time-revised', (time: number, solveId: number) => {
+    socket.on('time-revised', (time: number, penality : Penality, solveId: number) => {
       const roomname = socket.data.roomname;
       
       if (roomname && rooms.has(roomname)) {
@@ -395,7 +395,7 @@ export default defineNitroPlugin((nitroApp) => {
         );
         const solveToUpdate = room.allSolves.findIndex((solve) => solve.solveId === solveId);
         if (player && solveToUpdate >= 0 && room.allSolves[solveToUpdate]) {
-          room.allSolves[solveToUpdate][player.sessionId] = {time: time, finalPenality : 'OK',win : false} as PlayerTime;
+          room.allSolves[solveToUpdate][player.sessionId] = {time: time, finalPenality : penality, win : false} as PlayerTime;
           //Update wins.
           setBestTime(room.allSolves[solveToUpdate],true); 
           io.to(roomname).emit(

@@ -326,12 +326,9 @@ const timerUpManager = (event: KeyboardEvent | TouchEvent) => {
       case 'READY_TO-SOLVE':
         timer.color = 'text-gray-50';
         timer.border = 'text-gray-500 border-2 rounded-lg';
-        timer.state = 'RUNNING';
-        emits('playerChangeState', 'SOLVING');
         if (props.activeInspection) {
           clearInterval(inspectionId.value);
         }
-
         timerFiredDisplay();
 
         break;
@@ -452,6 +449,8 @@ const beginInspection = () => {
  */
 const timerFiredDisplay = () => {
   //Show timer with 0.01 precision.
+  timer.state = 'RUNNING';
+  emits('playerChangeState', 'SOLVING');
   timer.beginTimeStamp = performance.now();
   timerIntervalId.value = setInterval(() => {
     const timeNow = performance.now();

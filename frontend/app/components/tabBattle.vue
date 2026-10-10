@@ -102,8 +102,12 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
 
 //Render player Header when state is updated
 const renderPlayerHeader = (player: PlayerLite, playerStats: PlayerStats) => {
-
+    const sorted = 
+    props.solves
+    .toSorted((a,b) => a[player.socketId]?.time - b[player.socketId]?.time)
+    .filter((solve) => solve[player.socketId]?.finalPenality !== 'DNF');
     let avgTab = [
+        h('span', { class: 'text-secondary-400' }, `best: ${sorted && sorted[0] && sorted[0][player.socketId] ? timeForHuman(sorted[0][player.socketId].time, false) : 'DNF'}`),
         h('span', { class: 'text-secondary-400' }, 'ao5: ' + playerStats.ao5),
         h('span', { class: 'text-gray-100' }, 'ao12: ' + playerStats.ao12)
     ]
@@ -140,7 +144,7 @@ const renderSolveIdCell = (cell: any) => {
             }
         });
 
-        let scores = h('div', { class: 'flex flex-col max-h-10 overflow-y-scroll' }, childrens);
+        let scores = h('div', { class: 'flex flex-col  overflow-y-scroll' }, childrens);
 
         return h(resolveComponent('UModal'), { title: `Historique du solve n° ${cell.getValue()}` }, {
 
@@ -189,8 +193,8 @@ const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
                                 const [ok, value] = isTimeFormatOk(modifyInputValue.value ?? '');
 
                                 if (ok) {
-                                    const [time, _] = onSendManualTime(value);
-                                    emits('time-revised', time, solveId);
+                                    const [time, penality] = onSendManualTime(value);
+                                    emits('time-revised', time, penality, solveId);
                                      toast.add({
                                         title: 'Votre temps a été modifié',
                                         icon : 'lucide:check'
