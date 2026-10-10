@@ -107,7 +107,7 @@ const renderPlayerHeader = (player: PlayerLite, playerStats: PlayerStats) => {
     .toSorted((a,b) => a[player.socketId]?.time - b[player.socketId]?.time)
     .filter((solve) => solve[player.socketId]?.finalPenality !== 'DNF');
     let avgTab = [
-        h('span', { class: 'text-secondary-400' }, `best: ${sorted && sorted[0] && sorted[0][player.socketId] ? timeForHuman(sorted[0][player.socketId].time, false) : 'DNF'}`),
+        h('span', { class: 'text-purple-400' }, `best: ${sorted && sorted[0] && sorted[0][player.socketId] ? timeForHuman(sorted[0][player.socketId].time, false) : 'DNF'}`),
         h('span', { class: 'text-secondary-400' }, 'ao5: ' + playerStats.ao5),
         h('span', { class: 'text-gray-100' }, 'ao12: ' + playerStats.ao12)
     ]
