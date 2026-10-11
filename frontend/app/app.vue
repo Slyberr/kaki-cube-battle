@@ -46,21 +46,21 @@
       <UModal title="CGU" :ui="{content : 'max-w-5xl'}">
         <UButton variant="ghost" class="text-muted" label="CGU"></UButton>
         <template #body>
-          <Cgu />
+          <LegalCgu />
         </template>
       </UModal>
 
       <UModal title="Politique de confidentialité" :ui="{content : 'max-w-5xl'}">
         <UButton variant="ghost" class="text-muted" label="Politique de confidentialité"></UButton>
         <template #body>
-          <Pdc />
+          <LegalPdc />
         </template>
       </UModal>
 
       <UModal title="Mentions légales" :ui="{content : 'max-w-5xl'}">
         <UButton variant="ghost" class="text-muted" label="Mentions légales"></UButton>
         <template #body>
-          <Mentionslegales />
+          <LegalMentions />
         </template>
       </UModal>
       </template>
@@ -89,9 +89,6 @@
  * Licensed under AGPL-3.0. See LICENSE file or
  * https://www.gnu.org/licenses/agpl-3.0.html
  */
-
-import FeedBack from './components/feedBack.vue';
-import Mentionslegales from './components/mentionslegales.vue';
 
 const rooms = useState<{ roomname: string, isPrivate: boolean, currentEvent: EventID; length: number }[]>('rooms');
 const socket = useSocket();
