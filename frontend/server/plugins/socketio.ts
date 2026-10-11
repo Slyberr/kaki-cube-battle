@@ -18,6 +18,7 @@ import { convertSolveForClient } from '../utils/convert/convertSolveForClient';
 import { convertPlayersForClient } from '../utils/convert/convertPlayersForClient';
 import { isSessionExpired } from '../utils/verif/isSessionExpired';
 import { Penality, PlayerTime } from '~~/shared/types/solve';
+import { socketisplayer } from '../utils/verif/socketisplayer';
 
 const corsOptions: CorsOptions = {
   origin: '*',
@@ -144,12 +145,10 @@ export default defineNitroPlugin((nitroApp) => {
                 }
               });
             }
-
             socket.leave(room.roomname);
             console.log(
               `LOG : Le joueur ${player.pseudo} a été déco pour la raison suivante : ${reason} `,
             );
-
             player.expiration = Date.now();
             rooms.set(room.roomname, room);
           }
@@ -337,23 +336,14 @@ export default defineNitroPlugin((nitroApp) => {
 
     //When a player juste change his state (solving, inspecting...)
     socket.on('change-state', (state: PlayerState) => {
-      const roomname = socket.data.roomname;
-      if (roomname && rooms.has(roomname)) {
-        const room = rooms.get(roomname)!;
-        const player = room.players.find(
-          (player) =>
-            player.sessionId === socket.handshake.auth.sessionid &&
-            player.actualSocketId === socket.id,
+      const [player, room] = socketisplayer(rooms, socket);
+      if (player && room) {
+        player.state = state;
+        io.to(room.roomname).emit(
+          'players-updated',
+          convertPlayersForClient(room.players),
         );
-
-        if (player) {
-          player.state = state;
-          io.to(roomname).emit(
-            'players-updated',
-            convertPlayersForClient(room.players),
-          );
-          rooms.set(roomname, room);
-        }
+        rooms.set(room.roomname, room);
       }
     });
 
@@ -382,30 +372,30 @@ export default defineNitroPlugin((nitroApp) => {
       },
     );
 
-    // If player want to modify a time.
-    socket.on('time-revised', (time: number, penality : Penality, solveId: number) => {
-      const roomname = socket.data.roomname;
-      
-      if (roomname && rooms.has(roomname)) {
-        const room = rooms.get(roomname)!;
-        const player = room.players.find(
-          (player) =>
-            player.sessionId === socket.handshake.auth.sessionid &&
-            player.actualSocketId === socket.id,
+    // If player wants to revised a time.
+    socket.on(
+      'time-revised',
+      (time: number, penality: Penality, solveId: number) => {
+        const [player, room] = socketisplayer(rooms, socket);
+        const solveToUpdate = room?.allSolves.findIndex(
+          (solve) => solve.solveId === solveId,
         );
-        const solveToUpdate = room.allSolves.findIndex((solve) => solve.solveId === solveId);
-        if (player && solveToUpdate >= 0 && room.allSolves[solveToUpdate]) {
-          room.allSolves[solveToUpdate][player.sessionId] = {time: time, finalPenality : penality, win : false} as PlayerTime;
+        if (player && solveToUpdate !== undefined && room && room.allSolves[solveToUpdate]) {
+          room.allSolves[solveToUpdate][player.sessionId] = {
+            time: time,
+            finalPenality: penality,
+            win: false,
+          } as PlayerTime;
           //Update wins.
-          setBestTime(room.allSolves[solveToUpdate],true); 
-          io.to(roomname).emit(
+          setBestTime(room.allSolves[solveToUpdate], true);
+          io.to(room.roomname).emit(
             'refresh-tab',
-            convertSolveForClient(room.allSolves[solveToUpdate],room.players)
+            convertSolveForClient(room.allSolves[solveToUpdate], room.players),
           );
-          rooms.set(roomname, room);
+          rooms.set(room.roomname, room);
         }
-      }
-    });
+      },
+    );
 
     //when event is updated
     socket.on('update-event', async (event: EventID) => {
@@ -480,22 +470,13 @@ export default defineNitroPlugin((nitroApp) => {
     //Send a message to the room
     socket.on('send-message', (message: string) => {
       const date = Date.now();
-      const roomname = socket.data.roomname;
-
-      if (roomname && rooms.has(roomname)) {
-        const room = rooms.get(roomname)!;
-        const player = room.players.find(
-          (player) =>
-            player.sessionId === socket.handshake.auth.sessionid &&
-            socket.id === player.actualSocketId,
-        );
-        if (player) {
-          io.to(roomname).emit('get-message', {
-            pseudo: player.pseudo,
-            data: message,
-            date: date,
-          });
-        }
+      const [player, room] = socketisplayer(rooms, socket);
+      if (player && room) {
+        io.to(room.roomname).emit('get-message', {
+          pseudo: player.pseudo,
+          data: message,
+          date: date,
+        });
       }
     });
   });
