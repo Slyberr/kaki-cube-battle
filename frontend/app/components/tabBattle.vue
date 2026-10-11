@@ -14,13 +14,29 @@
  */
 
 import { timeForHuman, type ClientPlayer } from '#imports';
-import { type TableColumn } from '@nuxt/ui'
+import { type RadioGroupItem, type TableColumn } from '@nuxt/ui'
 import type { PlayerStats } from '~/types/types';
-import type { EventID, PlayerTime, Solve } from '~~/shared/types/solve';
+import type { EventID, Penality, PlayerTime, Solve } from '~~/shared/types/solve';
 import PlayerState from './PlayerState.vue';
 
 const props = defineProps<{ players: ClientPlayer[], solves: Solve[], solveId: number, me: ClientPlayer, event: EventID }>()
 const modifyInputValue = ref<string>();
+const radioSolvePenalities = ref<RadioGroupItem[]>([
+    {
+        label: 'OK',
+        value: 'NONE',
+    },
+    {
+        label: '+2',
+        value: 'PLUS_2',
+    },
+    {
+        label: 'DNF',
+        value: 'DNF'
+    }
+]);
+const penalitySelected = ref<Penality>('NONE');
+
 const toast = useToast();
 const emits = defineEmits(['time-revised']);
 
@@ -102,10 +118,10 @@ const colonnes = computed<TableColumn<Solve>[]>(() => {
 
 //Render player Header when state is updated
 const renderPlayerHeader = (player: PlayerLite, playerStats: PlayerStats) => {
-    const sorted = 
-    props.solves
-    .toSorted((a,b) => a[player.socketId]?.time - b[player.socketId]?.time)
-    .filter((solve) => solve[player.socketId]?.finalPenality !== 'DNF');
+    const sorted =
+        props.solves
+            .toSorted((a, b) => a[player.socketId]?.time - b[player.socketId]?.time)
+            .filter((solve) => solve[player.socketId]?.finalPenality !== 'DNF');
     let avgTab = [
         h('span', { class: 'text-purple-400' }, `best: ${sorted && sorted[0] && sorted[0][player.socketId] ? timeForHuman(sorted[0][player.socketId].time, false) : 'DNF'}`),
         h('span', { class: 'text-secondary-400' }, 'ao5: ' + playerStats.ao5),
@@ -148,7 +164,11 @@ const renderSolveIdCell = (cell: any) => {
 
         return h(resolveComponent('UModal'), { title: `Historique du solve n° ${cell.getValue()}` }, {
 
-            default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'secondary', class: 'flex text-cyan-500 justify-center w-full min-h-full', label: (cell.getValue() as number).toString() }),
+            default: () => h(resolveComponent('UButton'), { 
+                variant: 'ghost',
+                color: 'secondary',
+                class: 'flex text-cyan-500 justify-center w-full min-h-full',
+                label: (cell.getValue() as number).toString() }),
             body: () => h('div', { class: 'flex-col' }, [
                 h('div', { class: 'text-sm max-h-30 overflow-y-scroll bg-secondary-700/40 rounded-xl p-2' }, solve?.data.scramble),
                 h('div', { class: 'flex w-full' }, [
@@ -181,32 +201,45 @@ const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
     } else {
         cellContent =
             h(resolveComponent('UModal'), { title: `Modifier votre temps n° ${solveId}` }, {
-
-                default: () => h(resolveComponent('UButton'), { variant: 'ghost', color: 'neutral', class: `flex justify-center w-full h-full ${playerTime && playerTime.win ? 'text-primary-500' : 'text-gray-100'}`, label: playerTime ? showFormatedTime(playerTime) : '' }),
+                default: () => h(resolveComponent('UButton'), { 
+                    onClick: () => { 
+                        modifyInputValue.value = '';
+                        penalitySelected.value = 'NONE' 
+                    }, 
+                    variant: 'ghost',
+                    color: 'neutral',
+                    class: `flex justify-center w-full h-full ${playerTime && playerTime.win ? 'text-primary-500' : 'text-gray-100'}`,
+                    label: playerTime ? showFormatedTime(playerTime) : '' }
+                ),
                 body: () => h('div', { class: 'flex flex-col w-full  items-center gap-2' }, [
-                    h(resolveComponent('UForm'), {class : 'flex flex-col w-full justify-center items-center gap-4'}, [
+                    h(resolveComponent('UForm'), { class: 'flex flex-col w-full justify-center items-center gap-4' }, [
 
-                        h(resolveComponent('UInput'), { 'onUpdate:modelValue': (val: string) => modifyInputValue.value = val, placeholder: 'Only Digits or DNF.', class: 'w-[50%]' }),
+                        h(resolveComponent('UInput'), { 
+                            'onUpdate:modelValue': (val: string) => modifyInputValue.value = val,
+                            placeholder: 'Only Digits or DNF.',
+                            class: 'w-[50%]' 
+                        }),
                         h(resolveComponent('UButton'), {
                             onClick: () => {
 
-                                const [ok, value] = isTimeFormatOk(modifyInputValue.value ?? '');
+                                const [ok, timeDisplayed] = isTimeFormatOk(modifyInputValue.value ?? '', penalitySelected.value);
 
                                 if (ok) {
-                                    const [time, penality] = onSendManualTime(value);
+                                    const [time, penality] = onSendManualTime(timeDisplayed, penalitySelected.value);
                                     emits('time-revised', time, penality, solveId);
-                                     toast.add({
+                                    toast.add({
                                         title: 'Votre temps a été modifié',
-                                        icon : 'lucide:check'
+                                        icon: 'lucide:check'
                                     })
                                     modifyInputValue.value = '';
                                 } else {
+                                    
                                     toast.add({
                                         title: 'Temps non envoyé',
                                         description:
                                             "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
                                         duration: 5000,
-                                        icon : 'lucide:ban'
+                                        icon: 'lucide:ban'
                                     })
                                 }
                             },
@@ -214,8 +247,16 @@ const renderTimeCell = (cell: any, solveId: number, idPlayer: string) => {
                         },
                             'Confirmer'),
                     ]),
+                    h(resolveComponent('URadioGroup'), {
+                        size: 'xs',
+                        modelValue: penalitySelected.value,
+                        'onUpdate:modelValue': (val: Penality) => penalitySelected.value = val,
+                        items: radioSolvePenalities.value, variant: "card",
+                        indicator: "hidden",
+                        orientation: "horizontal"
+                    }),
 
-                    h(resolveComponent('span'), {}, `Votre temps est : ${isTimeFormatOk(modifyInputValue.value ?? '')[1]}`)
+                    h(resolveComponent('span'), {}, `Votre temps est : ${isTimeFormatOk(modifyInputValue.value ?? '', penalitySelected.value)[1]}`)
                 ]
                 )
             });

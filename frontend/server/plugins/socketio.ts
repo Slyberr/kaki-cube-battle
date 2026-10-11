@@ -383,7 +383,7 @@ export default defineNitroPlugin((nitroApp) => {
         if (player && solveToUpdate !== undefined && room && room.allSolves[solveToUpdate]) {
           room.allSolves[solveToUpdate][player.sessionId] = {
             time: time,
-            finalPenality: penality,
+            finalPenality: penality === 'PLUS_2' ? '+2' : penality,
             win: false,
           } as PlayerTime;
           //Update wins.
