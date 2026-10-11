@@ -2,8 +2,9 @@
   <div id="timer" class="h-60 lg:h-40 flex justify-center mx-2 lg:mx-4 w-full lg:w-[40%] xl:w-[35%] 2xl:w-[30%]"
     :class="inputMode === 'KEYBOARD' ? timer.border : 'border-none'">
 
-    <!--if Keyboard mode-->
-    <div v-if="inputMode === 'KEYBOARD'" class="relative  w-full flex flex-col justify-center items-center gap-3">
+    <!--if Keyboard/Stack mode-->
+    <div v-if="inputMode === 'KEYBOARD' || inputMode === 'STACKMAT'"
+      class="relative  w-full flex flex-col justify-center items-center gap-3">
 
       <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
         {{
@@ -14,7 +15,7 @@
         <div class="flex flex-row gap-4">
           <UButton icon="lucide:rotate-ccw" variant="outline"
             :disabled="timer.state === 'WAITING_OTHER' || !onConfirmTouchUp" @click="retry" />
-          <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
+          <URadioGroup size="xs" v-model="penalitySelected" :items="radioSolvePenalities"
             :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
             indicator="hidden" orientation="horizontal">
           </URadioGroup>
@@ -24,30 +25,6 @@
           :label="buttonLabel" @click="saveTime" />
       </div>
     </div>
-    <!--if stackmat mode-->
-    <div v-else-if="inputMode === 'STACKMAT'" class="relative  w-full flex flex-col justify-center items-center gap-3">
-
-
-      <div class="text-3xl lg:text-4xl text-center  transition ease-linear duration-75 select-none" :class=timer.color>
-        {{
-          timer.timeDisplayed }}</div>
-
-      <div class="absolute top-35 lg:top-25 flex justify-center gap-2 max-[405px]:flex-col max-[405px]:items-center"
-        v-if="timer.state === 'CONFIRM' || timer.state === 'WAITING_OTHER'">
-        <div class="flex flex-row gap-4">
-          <UButton icon="lucide:rotate-ccw" variant="outline"
-            :disabled="timer.state === 'WAITING_OTHER' || !onConfirmTouchUp" @click="retry" />
-          <URadioGroup size="xs" v-model:model-value="penalitySelected" :items="radioSolvePenalities"
-            :disabled="inspectionPenality === 'DNF' || timer.state !== 'CONFIRM' || !onConfirmTouchUp" variant="card"
-            indicator="hidden" orientation="horizontal">
-          </URadioGroup>
-        </div>
-
-        <UButton class="max-h-8 self-center" :loading="timer.state === 'WAITING_OTHER'" :disabled="!onConfirmTouchUp"
-          :label="buttonLabel" @click="saveTime" />
-      </div>
-    </div>
-
 
     <!--if manual mode-->
     <div v-else class="flex flex-col justify-center items-center w-full">
@@ -60,22 +37,27 @@
         </template>
       </template>
       <template v-else>
-        <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center" @submit="saveTime">
+        <UForm class="flex gap-2 w-[50%] my-2 sm:w-60 justify-center text-4xl" @submit="saveTime">
           <UFormField>
-            <UInput id="input-timer" v-model:model-value="manualTime.input" placeholder="Only Digit or 'DNF'."
+            <UInput id="input-timer" v-model="manualTime.input" placeholder="Only Digit or 'DNF'."
               color="primary" maxlength="6" :disabled="manualTime.disabled" :ui="{ base: 'input-timer' }" />
           </UFormField>
           <UButton type="submit" class="text-xs" :loading="timer.state === 'WAITING_OTHER'" :label="buttonLabel">
           </UButton>
+
         </UForm>
-        <p>{{ "Votre temps est : " + isTimeFormatOk(manualTime.input)[1] }}</p>
+        <URadioGroup size="xs" v-model="penalitySelected" :items="radioSolvePenalities"
+          :disabled="inspectionPenality === 'DNF' || (timer.state !== 'CONFIRM' && timer.state !== 'BEGIN_STATE')"
+          variant="card" indicator="hidden" orientation="horizontal">
+        </URadioGroup>
+        <p>{{ "Votre temps est : " + isTimeFormatOk(manualTime.input,penalitySelected)[1] }}</p>
       </template>
     </div>
   </div>
 
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 /*
  * Kaki Cube — Copyright (C) 2026 Louis Presti
  * Licensed under AGPL-3.0. See LICENSE file or
@@ -84,8 +66,8 @@
 
 import type { RadioGroupItem } from '@nuxt/ui';
 import { Stackmat, type Packet } from 'stackmat';
-import type { Mode } from '~~/shared/types/solve';
 import { Socket } from 'socket.io-client';
+import type { TimerInfo } from '~/types/types';
 
 const props = defineProps<{
   readyHoldingTime: number,
@@ -96,14 +78,7 @@ const props = defineProps<{
   socket: Socket
 }>();
 
-const timer = reactive<{
-  realTime: number,
-  beginTimeStamp: number,
-  timeDisplayed: string,
-  state: 'BEGIN_STATE' | 'INSPECTION' | 'READY_TO-SOLVE' | 'RUNNING' | 'CONFIRM' | 'WAITING_OTHER',
-  color: string,
-  border: string
-}>
+const timer = reactive<TimerInfo>
   ({
     timeDisplayed: '0.00',
     realTime: 0.00,
@@ -494,13 +469,16 @@ const timeCompleted = (packet?: Packet) => {
  * Buisness logic when time is confirmed.
  */
 const saveTime = () => {
+
+  if (penalitySelected.value === 'PLUS_2') {
+    timer.realTime += 2000;
+  }
+
   if (props.inputMode === 'KEYBOARD' || props.inputMode === 'STACKMAT') {
     onConfirmTouchUp.value = false;
     buttonLabel.value = "En attente des joueurs";
 
-    if (penalitySelected.value === 'PLUS_2') {
-      timer.realTime += 2000;
-    }
+
     //save timestamp -> treatement for human in cells.
     emits('time-sended', timer.realTime, inspectionPenality.value, penalitySelected.value);
     timer.state = 'WAITING_OTHER';
@@ -509,10 +487,10 @@ const saveTime = () => {
   }
 
   if (props.inputMode === 'MANUALLY') {
-    const [isOk, timeFormated] = isTimeFormatOk(manualTime.input);
+    const [isOk, timeDisplayed] = isTimeFormatOk(manualTime.input,penalitySelected.value);
 
     if (isOk) {
-      const [time, choosedPen] = onSendManualTime(timeFormated);
+      const [time, choosedPen] = onSendManualTime(timeDisplayed, penalitySelected.value);
       emits('time-sended', time, 'NONE', choosedPen);
       manualTime.input = '';
       manualTime.disabled = true;
@@ -525,7 +503,7 @@ const saveTime = () => {
         description:
           "N'entrez que des chiffres ou 'DNF'. Quelques exemples :  012 -> 0.12 ou 41012 -> 4:10.12.",
         duration: 5000,
-        icon : 'lucide:ban'
+        icon: 'lucide:ban'
       });
     }
 
@@ -585,12 +563,12 @@ watch(() => penalitySelected.value, async (newVal) => {
   if (inspectionPenality.value !== 'DNF') {
     const actualTimeToString = timeForHuman(timer.realTime, false);
 
-    if (newVal === 'PLUS_2' && timer.state === 'CONFIRM') {
+    if (newVal === 'PLUS_2' && timer.state === 'CONFIRM' ) {
       timer.timeDisplayed = inspectionPenality.value === 'PLUS_2'
         ? (timeForHuman(timer.realTime + 2000, false).concat('++'))
         : (timeForHuman(timer.realTime + 2000, false).concat('+'));
     }
-    if (newVal === 'DNF' && timer.state === 'CONFIRM') {
+    if (newVal === 'DNF' && timer.state === 'CONFIRM' ) {
       timer.timeDisplayed = '('.concat(actualTimeToString, ')', ' DNF');
     }
 
